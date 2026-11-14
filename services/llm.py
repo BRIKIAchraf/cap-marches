@@ -1,0 +1,82 @@
+"""Génération d'une fiche commerciale via Featherless."""
+
+from __future__ import annotations
+
+import json
+import os
+from typing import Any
+
+
+class LlmError(RuntimeError):
+    """Erreur d'inférence présentable à l'utilisateur."""
+
+
+def is_configured() -> bool:
+    return bool(os.getenv("FEATHERLESS_API_KEY", "").strip())
+
+
+def build_brief(records: list[dict[str, Any]], company_offer: str) -> str:
+    """Produit une note factuelle à partir de cinq signaux maximum."""
+
+    api_key = os.getenv("FEATHERLESS_API_KEY", "").strip()
+    if not api_key:
+        raise LlmError("Ajoutez FEATHERLESS_API_KEY dans .env.")
+
+    try:
+        from openai import OpenAI
+    except ImportError as exc:  # pragma: no cover - dépend de l'environnement
+        raise LlmError("Le paquet `openai` n'est pas installé.") from exc
+
+    compact = []
+    allowed = {
+        "objet",
+        "montant",
+        "datenotification",
+        "dureemois",
+        "date_fin_estimee",
+        "lieuexecution_code",
+        "acheteur_id",
+        "score",
+    }
+    for record in records[:5]:
+        compact.append({key: record.get(key) for key in allowed if key in record})
+
+    client = OpenAI(
+        api_key=api_key,
+        base_url="https://api.featherless.ai/v1",
+    )
+    model = os.getenv("FEATHERLESS_MODEL", "zai-org/GLM-5.2")
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            temperature=0.2,
+            max_tokens=500,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Tu es un analyste commercial prudent. Utilise uniquement "
+                        "les données fournies. N'invente ni nom d'organisation, ni "
+                        "contact, ni date. Distingue clairement fait et estimation. "
+                        "Réponds en français avec quatre rubriques courtes : Signal, "
+                        "Pourquoi, Prochaine action, Limites."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {"offre_entreprise": company_offer, "marches": compact},
+                        ensure_ascii=False,
+                        default=str,
+                    ),
+                },
+            ],
+        )
+    except Exception as exc:  # SDK : plusieurs familles d'erreurs possibles
+        raise LlmError(f"Featherless n'a pas répondu : {exc}") from exc
+
+    content = response.choices[0].message.content
+    if not content:
+        raise LlmError("Featherless a renvoyé une réponse vide.")
+    return content
+

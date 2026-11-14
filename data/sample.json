@@ -1,0 +1,63 @@
+[
+  {
+    "id": "DEMO-001",
+    "objet": "Acquisition et maintenance d'un logiciel de gestion des ressources humaines",
+    "montant": 185000,
+    "datenotification": "2024-11-20",
+    "dureemois": 36,
+    "lieuexecution_code": "75",
+    "acheteur_id": "DEMO-ACH-001",
+    "source": "donnee_synthetique_de_demo"
+  },
+  {
+    "id": "DEMO-002",
+    "objet": "Fourniture d'une solution logicielle de gestion des recrutements",
+    "montant": 92000,
+    "datenotification": "2023-12-12",
+    "dureemois": 48,
+    "lieuexecution_code": "92",
+    "acheteur_id": "DEMO-ACH-002",
+    "source": "donnee_synthetique_de_demo"
+  },
+  {
+    "id": "DEMO-003",
+    "objet": "Prestations d'intégration et support d'un logiciel RH",
+    "montant": 240000,
+    "datenotification": "2025-04-03",
+    "dureemois": 24,
+    "lieuexecution_code": "75",
+    "acheteur_id": "DEMO-ACH-003",
+    "source": "donnee_synthetique_de_demo"
+  },
+  {
+    "id": "DEMO-004",
+    "objet": "Abonnement à une plateforme de formation numérique",
+    "montant": 68000,
+    "datenotification": "2025-02-18",
+    "dureemois": 24,
+    "lieuexecution_code": "69",
+    "acheteur_id": "DEMO-ACH-004",
+    "source": "donnee_synthetique_de_demo"
+  },
+  {
+    "id": "DEMO-005",
+    "objet": "Maintenance d'un logiciel de paie et gestion administrative",
+    "montant": 310000,
+    "datenotification": "2022-09-01",
+    "dureemois": 60,
+    "lieuexecution_code": "75",
+    "acheteur_id": "DEMO-ACH-005",
+    "source": "donnee_synthetique_de_demo"
+  },
+  {
+    "id": "DEMO-006",
+    "objet": "Solution de cybersécurité et supervision des postes de travail",
+    "montant": 420000,
+    "datenotification": "2024-06-30",
+    "dureemois": 48,
+    "lieuexecution_code": "33",
+    "acheteur_id": "DEMO-ACH-006",
+    "source": "donnee_synthetique_de_demo"
+  }
+]
+
