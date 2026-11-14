@@ -9,6 +9,7 @@ Jeux officiels :
 from __future__ import annotations
 
 import os
+import time
 from collections.abc import Iterable
 from typing import Any
 
@@ -191,26 +192,42 @@ def fetch_organizations(
     column = identifier_type.lower().strip()
     if column not in {"siren", "siret"}:
         raise ValueError("identifier_type doit valoir 'siren' ou 'siret'.")
-    values = list(dict.fromkeys(str(value).strip() for value in identifiers if value))
+    maximum_identifiers = max(
+        1, min(int(os.getenv("MAX_SIRENE_ENRICHMENTS", "5")), 20)
+    )
+    values = list(
+        dict.fromkeys(str(value).strip() for value in identifiers if value)
+    )[:maximum_identifiers]
     if not values:
         return []
 
-    filters: list[dict[str, Any]] = [
-        {
-            "colonne": column,
-            "op": "eq" if len(values) == 1 else "in",
-            "valeur": values[0] if len(values) == 1 else values,
-        }
-    ]
-    if column == "siren":
-        filters.append({"colonne": "siege", "op": "eq", "valeur": True})
-    filters.append(
-        {"colonne": "etat_administratif", "op": "eq", "valeur": "A"}
-    )
-    return query_dataset(
-        SIRENE_DATASET,
-        filters=filters,
-        sort=column,
-        limit=min(limit, 100),
-        session=session,
-    )
+    # Le jeu Sirene accepte uniquement `eq` sur SIREN/SIRET, pas `in`.
+    # On borne donc le nombre d'acheteurs et on respecte une requête/seconde.
+    rows: list[dict[str, Any]] = []
+    last_error: HemicycleError | None = None
+    for index, value in enumerate(values):
+        if index and session is None:
+            time.sleep(1.05)
+        filters: list[dict[str, Any]] = [
+            {"colonne": column, "op": "eq", "valeur": value}
+        ]
+        if column == "siren":
+            filters.append({"colonne": "siege", "op": "eq", "valeur": True})
+        filters.append(
+            {"colonne": "etat_administratif", "op": "eq", "valeur": "A"}
+        )
+        try:
+            rows.extend(
+                query_dataset(
+                    SIRENE_DATASET,
+                    filters=filters,
+                    sort="siret",
+                    limit=min(limit, 100),
+                    session=session,
+                )
+            )
+        except HemicycleError as exc:
+            last_error = exc
+    if not rows and last_error:
+        raise last_error
+    return rows[:limit]

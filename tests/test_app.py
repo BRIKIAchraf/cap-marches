@@ -10,13 +10,13 @@ class AppSmokeTests(unittest.TestCase):
         app = AppTest.from_file(str(app_path), default_timeout=15)
         app.run()
 
-        self.assertEqual(app.title[0].value, "🎯 Cap Marchés")
         app.selectbox[1].set_value("Démonstration hors ligne")
         app.button[0].click().run()
 
         self.assertEqual(len(app.exception), 0)
         self.assertGreaterEqual(len(app.metric), 4)
-        self.assertTrue(any("lignes analysées" in item.value for item in app.success))
+        self.assertGreaterEqual(len(app.dataframe), 1)
+        self.assertTrue(any("Recherche active" in item.value for item in app.caption))
 
 
 if __name__ == "__main__":

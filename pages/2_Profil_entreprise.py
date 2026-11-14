@@ -1,39 +1,83 @@
-"""Mémoire durable de l'entreprise, sans secret ni donnée personnelle."""
+"""Mémoire durable de l'entreprise."""
 
 from __future__ import annotations
 
 import streamlit as st
 
 import storage
+from ui import hero, navigation, section, setup_page
 
 
-st.set_page_config(page_title="Profil entreprise · Cap Marchés", page_icon="🏢", layout="wide")
-st.title("🏢 Profil de votre entreprise")
-st.caption("Cette mémoire sert de contexte au moteur sémantique et à l'agent de veille.")
-
+setup_page("Profil entreprise", "🏢")
+navigation()
 profile = storage.load_profile() or {}
+
+hero(
+    "Le contexte qui rend l'agent pertinent",
+    "Décrivez votre offre une fois. Le moteur sémantique et l'agent réutiliseront ce profil pour cibler, classer et expliquer les opportunités.",
+    "Mémoire d'entreprise",
+    [
+        ("Profil enregistré" if profile else "Profil à compléter", "ok" if profile else "demo"),
+        ("Stockage local sécurisé", "ok"),
+        ("Aucun secret dans ce profil", "ok"),
+    ],
+)
+
+section(
+    "Positionnement commercial",
+    "Soyez précis sur les problèmes résolus, vos prestations et vos marchés cibles.",
+)
 with st.form("company-profile"):
-    company_name = st.text_input("Nom de l'entreprise", value=profile.get("company_name", ""))
-    offer = st.text_area(
-        "Offre et savoir-faire",
-        value=profile.get("offer", ""),
-        placeholder="Ex. Intégration de logiciels RH SaaS, migration et accompagnement…",
-        height=140,
+    identity, targeting = st.columns([1.15, 0.85])
+    with identity:
+        company_name = st.text_input(
+            "Nom de l'entreprise *",
+            value=profile.get("company_name", ""),
+            placeholder="Ex. Nova Conseil",
+        )
+        offer = st.text_area(
+            "Offre et savoir-faire *",
+            value=profile.get("offer", ""),
+            placeholder=(
+                "Ex. Nous intégrons des logiciels RH SaaS et accompagnons les "
+                "organisations publiques dans la migration, la formation et le support."
+            ),
+            height=170,
+        )
+        keywords = st.text_input(
+            "Mots-clés métier",
+            value=profile.get("keywords", ""),
+            placeholder="SIRH, paie, SaaS, ressources humaines, migration",
+        )
+    with targeting:
+        cpv_codes = st.text_input(
+            "Codes CPV",
+            value=profile.get("cpv_codes", ""),
+            placeholder="48000000, 72260000",
+        )
+        departments = st.text_input(
+            "Départements cibles",
+            value=profile.get("departments", ""),
+            placeholder="75, 92, 93, 94",
+        )
+        minimum = st.number_input(
+            "Montant minimum (€)",
+            min_value=0.0,
+            value=float(profile.get("minimum", 0)),
+            step=10_000.0,
+        )
+        maximum = st.number_input(
+            "Montant maximum (€)",
+            min_value=0.0,
+            value=float(profile.get("maximum", 1_000_000)),
+            step=10_000.0,
+        )
+    submitted = st.form_submit_button(
+        "Enregistrer le profil", type="primary", width="stretch"
     )
-    keywords = st.text_input("Mots-clés", value=profile.get("keywords", ""))
-    cpv_codes = st.text_input("Codes CPV", value=profile.get("cpv_codes", ""))
-    departments = st.text_input("Départements cibles", value=profile.get("departments", ""))
-    minimum, maximum = st.columns(2)
-    min_value = minimum.number_input(
-        "Montant minimum (€)", min_value=0.0, value=float(profile.get("minimum", 0)), step=10_000.0
-    )
-    max_value = maximum.number_input(
-        "Montant maximum (€)", min_value=0.0, value=float(profile.get("maximum", 1_000_000)), step=10_000.0
-    )
-    submitted = st.form_submit_button("Enregistrer le profil", type="primary")
 
 if submitted:
-    if max_value < min_value:
+    if maximum < minimum:
         st.error("Le montant maximum doit être supérieur au minimum.")
     else:
         try:
@@ -44,12 +88,17 @@ if submitted:
                     "keywords": keywords,
                     "cpv_codes": cpv_codes,
                     "departments": departments,
-                    "minimum": min_value,
-                    "maximum": max_value,
+                    "minimum": minimum,
+                    "maximum": maximum,
                 }
             )
-            st.success("Profil enregistré dans la base locale.")
+            st.success("Profil enregistré. L'agent peut désormais l'utiliser.")
+            st.balloons()
         except ValueError as exc:
             st.error(str(exc))
 
-st.info("Ne stockez ici aucune clé API, aucun mot de passe et aucune donnée personnelle.")
+section("Bon profil, meilleurs résultats")
+first, second, third = st.columns(3)
+first.info("**Décrivez les résultats livrés**\n\nPréférez « migration SIRH et formation » à « informatique ».")
+second.info("**Ciblez vos territoires**\n\nSéparez les départements par des virgules.")
+third.info("**Restez non sensible**\n\nNe saisissez ni clé API, ni mot de passe, ni donnée personnelle.")
