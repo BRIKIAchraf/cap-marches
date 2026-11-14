@@ -10,7 +10,7 @@ import streamlit as st
 
 import learning
 import storage
-from ui import hero, navigation, section, setup_page
+from ui import footer, hero, navigation, section, setup_page
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -102,3 +102,5 @@ col_s1, col_s2, col_s3 = st.columns(3)
 col_s1.metric("Marchés & projets indexés", stats["seen_total"])
 col_s2.metric("Acheteurs en cache Sirene", stats["sirene_cached"])
 col_s3.metric("Historique d'alertes", len(storage.list_alert_history()))
+
+footer()

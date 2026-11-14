@@ -17,7 +17,7 @@ from scoring import DISPLAY_COLUMNS, PROJECT_DISPLAY_COLUMNS, score_contracts, s
 from services import alerts, decp, hemicycle, llm
 from services.evidence import contract_evidence, project_evidence
 from services.semantic import semantic_scores
-from ui import brand, empty_state, euro, hero, landing_storytelling, section, setup_page
+from ui import brand, empty_state, euro, footer, hero, landing_storytelling, section, setup_page
 
 
 ROOT = Path(__file__).resolve().parent
@@ -683,3 +683,4 @@ else:
     st.caption(
         "Sources : APProch, DECP et Sirene via Hémicycle · Licence Ouverte 2.0 · Les scores sont des indicateurs d'aide à la décision."
     )
+    footer()

@@ -396,6 +396,44 @@ CSS = """
     box-shadow: var(--shadow-soft);
   }
 
+  .cm-footer {
+    margin-top: 2.2rem;
+    padding: 1rem 1.2rem;
+    border-top: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(244, 247, 252, 0.65) 0%, rgba(255, 255, 255, 0.9) 100%);
+    border-radius: 18px 18px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .cm-footer-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    color: var(--navy);
+    font-weight: 800;
+    font-size: 0.96rem;
+  }
+  .cm-footer-meta {
+    color: var(--muted);
+    font-size: 0.8rem;
+    flex: 1 1 200px;
+  }
+  .cm-footer-links {
+    display: inline-flex;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+  }
+  .cm-footer-links a {
+    color: var(--blue);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .cm-footer-links a:hover { text-decoration: underline; }
+
   .cm-empty {
     text-align: center;
     padding: 3.5rem 1.5rem;
@@ -586,6 +624,27 @@ def section(title: str, subtitle: str = "") -> None:
 def empty_state(title: str, text: str, icon: str = "⌁") -> None:
     st.markdown(
         f'<div class="cm-empty"><div class="cm-empty-icon">{escape(icon)}</div><h3>{escape(title)}</h3><p>{escape(text)}</p></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def footer() -> None:
+    st.markdown(
+        """
+        <footer class="cm-footer">
+          <div class="cm-footer-brand">
+            <span style="display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#38d6df 0%, #2864dc 100%);color:#fff;font-weight:900;font-size:0.75rem;">CM</span>
+            Cap Marchés
+          </div>
+          <div class="cm-footer-meta">Veille commerciale, scoring explicable et preuves publiques.</div>
+          <div class="cm-footer-links">
+            <a href="/">Radar</a>
+            <a href="/2_Profil_entreprise">Profil</a>
+            <a href="/3_Agent_IA">Agent</a>
+            <a href="/4_Apprentissage">Apprentissage</a>
+          </div>
+        </footer>
+        """,
         unsafe_allow_html=True,
     )
 

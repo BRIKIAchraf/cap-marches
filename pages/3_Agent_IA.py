@@ -10,7 +10,7 @@ import streamlit as st
 
 import storage
 from services import agent, hemicycle, llm
-from ui import empty_state, hero, navigation, safe_page_link, section, setup_page
+from ui import empty_state, footer, hero, navigation, safe_page_link, section, setup_page
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -197,3 +197,5 @@ with tab_answer:
             st.error(str(exc))
     if st.session_state.get("agent_answer"):
         st.markdown(st.session_state["agent_answer"])
+
+footer()
