@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cap Marchés · Radar d'opportunités de la Commande Publique</title>
+  <meta name="description" content="Détectez les projets d'achats publics 3 à 12 mois avant leur publication officielle. Scoring hybride transparent, données souveraines APProch, DECP et Sirene.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-dark: #070c18;
+      --bg-card: rgba(16, 25, 48, 0.7);
+      --bg-card-hover: rgba(23, 36, 68, 0.85);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(56, 189, 248, 0.4);
+      --primary: #3b82f6;
+      --primary-glow: rgba(59, 130, 246, 0.35);
+      --cyan: #06b6d4;
+      --cyan-glow: rgba(6, 182, 212, 0.25);
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.2);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-display: 'Space Grotesk', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text);
+      font-family: var(--font-main);
+      line-height: 1.6;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.1) 0%, transparent 45%),
+        radial-gradient(circle at 50% 85%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    /* Container */
+    .container {
+      width: 100%;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* Navbar */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(7, 12, 24, 0.75);
+      border-bottom: 1px solid var(--border);
+      transition: all 0.3s ease;
+    }
+
+    .nav-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 76px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .brand-logo {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--cyan) 0%, var(--primary) 100%);
+      color: white;
+      font-weight: 800;
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      box-shadow: 0 0 20px var(--cyan-glow);
+    }
+
+    .brand-text h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .brand-text span {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.92rem;
+      font-weight: 550;
+      transition: color 0.2s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      padding: 0.7rem 1.4rem;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      font-weight: 650;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid transparent;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: white;
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.5);
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      border-color: var(--border);
+      backdrop-filter: blur(8px);
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .btn-lg {
+      padding: 0.9rem 1.8rem;
+      font-size: 1.05rem;
+      border-radius: 14px;
+    }
+
+    /* Badges */
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: #38bdf8;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1.4rem;
+    }
+
+    .badge-pill .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #38bdf8;
+      box-shadow: 0 0 10px #38bdf8;
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 5rem 0 4rem;
+      position: relative;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 3.5rem;
+      align-items: center;
+    }
+
+    .hero-content h2 {
+      font-family: var(--font-display);
+      font-size: clamp(2.4rem, 4vw, 3.6rem);
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.25rem;
+    }
+
+    .text-gradient {
+      background: linear-gradient(135deg, #60a5fa 0%, #38bdf8 50%, #34d399 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+      margin-bottom: 2rem;
+      max-width: 580px;
+    }
+
+    .hero-cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .live-status {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.82rem;
+      color: var(--text-dim);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 0 3px var(--emerald-glow);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 var(--emerald-glow); }
+      70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Mockup Card (Interactive Preview) */
+    .mockup-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 1.75rem;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45), 0 0 30px rgba(56, 189, 248, 0.08);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+
+    .mockup-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-focus);
+    }
+
+    .mockup-card:before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--cyan) 0%, var(--primary) 50%, var(--emerald) 100%);
+    }
+
+    .mockup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mockup-tag-new {
+      background: rgba(99, 102, 241, 0.15);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 750;
+      letter-spacing: 0.04em;
+    }
+
+    .mockup-score-box {
+      display: flex;
+      align-items: baseline;
+      gap: 0.3rem;
+    }
+
+    .mockup-score-num {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #38bdf8;
+    }
+
+    .mockup-score-max {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+    }
+
+    .mockup-title {
+      font-size: 1.15rem;
+      font-weight: 750;
+      margin-bottom: 0.5rem;
+      line-height: 1.35;
+    }
+
+    .mockup-buyer {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-muted);
+      font-size: 0.86rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .mockup-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-bottom: 1.4rem;
+    }
+
+    .mockup-metric-item {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.75rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .mockup-metric-item span {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      margin-bottom: 0.15rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .mockup-metric-item strong {
+      font-size: 0.92rem;
+      color: var(--text);
+    }
+
+    .mockup-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding-top: 0.8rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .bar-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .bar-fill {
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      margin-top: 0.25rem;
+    }
+
+    .bar-value {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--cyan), var(--primary));
+    }
+
+    /* Trust / Data Sources Banner */
+    .trust-bar {
+      padding: 2.5rem 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    .trust-title {
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1.5rem;
+      font-weight: 700;
+    }
+
+    .trust-badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 2.5rem;
+      align-items: center;
+    }
+
+    .trust-badge-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .trust-badge-item .icon {
+      font-size: 1.2rem;
+    }
+
+    /* KPIs Grid */
+    .kpi-section {
+      padding: 5rem 0;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem 1.7rem;
+      backdrop-filter: blur(12px);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-focus);
+      background: var(--bg-card-hover);
+    }
+
+    .kpi-num {
+      font-family: var(--font-display);
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 0.6rem;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .kpi-card:nth-child(1) .kpi-num {
+      background: linear-gradient(135deg, #60a5fa 0%, #38bdf8 100%);
+      -webkit-background-clip: text;
+    }
+    .kpi-card:nth-child(2) .kpi-num {
+      background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+      -webkit-background-clip: text;
+    }
+    .kpi-card:nth-child(3) .kpi-num {
+      background: linear-gradient(135deg, #a78bfa 0%, #818cf8 100%);
+      -webkit-background-clip: text;
+    }
+    .kpi-card:nth-child(4) .kpi-num {
+      background: linear-gradient(135deg, #f472b6 0%, #fb7185 100%);
+      -webkit-background-clip: text;
+    }
+
+    .kpi-label {
+      font-size: 1.05rem;
+      font-weight: 750;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+
+    .kpi-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Problem vs Solution */
+    .compare-section {
+      padding: 5rem 0;
+      position: relative;
+    }
+
+    .section-head {
+      text-align: center;
+      max-width: 720px;
+      margin: 0 auto 3.5rem;
+    }
+
+    .section-head h2 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 3.2vw, 2.8rem);
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .section-head p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    .compare-card {
+      border-radius: 24px;
+      padding: 2.4rem;
+      position: relative;
+    }
+
+    .compare-bad {
+      background: rgba(239, 68, 68, 0.04);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .compare-good {
+      background: rgba(16, 185, 129, 0.05);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      box-shadow: 0 15px 40px rgba(16, 185, 129, 0.08);
+    }
+
+    .compare-tag {
+      display: inline-block;
+      padding: 0.35rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 1.25rem;
+    }
+
+    .tag-bad {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+    }
+
+    .tag-good {
+      background: rgba(16, 185, 129, 0.2);
+      color: #6ee7b7;
+    }
+
+    .compare-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin-bottom: 1.4rem;
+    }
+
+    .compare-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+    }
+
+    .compare-list li {
+      position: relative;
+      padding-left: 2rem;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .compare-list li strong {
+      color: var(--text);
+    }
+
+    .compare-list li:before {
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    .compare-bad .compare-list li:before { content: "✕"; color: #ef4444; }
+    .compare-good .compare-list li:before { content: "✓"; color: #10b981; }
+
+    /* 4-Step Process */
+    .steps-section {
+      padding: 5rem 0;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+    }
+
+    .step-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem 1.6rem;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .step-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-focus);
+    }
+
+    .step-num {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%);
+      color: white;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.25rem;
+      margin-bottom: 1.2rem;
+      box-shadow: 0 6px 18px var(--primary-glow);
+    }
+
+    .step-title {
+      font-size: 1.15rem;
+      font-weight: 750;
+      margin-bottom: 0.6rem;
+    }
+
+    .step-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* Final CTA Banner */
+    .cta-banner {
+      padding: 5.5rem 0;
+    }
+
+    .cta-box {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.2) 0%, rgba(6, 182, 212, 0.15) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 32px;
+      padding: 4rem 3rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .cta-box h2 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 3.4vw, 3rem);
+      margin-bottom: 1rem;
+    }
+
+    .cta-box p {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 650px;
+      margin: 0 auto 2.4rem;
+    }
+
+    .cta-box .btn-group {
+      display: flex;
+      justify-content: center;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 3rem 0;
+      font-size: 0.88rem;
+      color: var(--text-dim);
+    }
+
+    .footer-wrap {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 980px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .compare-grid { grid-template-columns: 1fr; }
+      .steps-grid { grid-template-columns: 1fr 1fr; }
+      .nav-links { display: none; }
+    }
+
+    @media (max-width: 640px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+      .steps-grid { grid-template-columns: 1fr; }
+      .hero-content h2 { font-size: 2.2rem; }
+      .cta-box { padding: 2.5rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header>
+    <div class="container nav-wrap">
+      <a href="#" class="brand">
+        <div class="brand-logo">CM</div>
+        <div class="brand-text">
+          <h1>Cap Marchés</h1>
+          <span>Intelligence Commande Publique</span>
+        </div>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#probleme">Le Problème</a></li>
+        <li><a href="#methode">La Solution</a></li>
+        <li><a href="#etapes">Fonctionnement</a></li>
+        <li><a href="#chiffres">Impact</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <!-- Direct Link to Streamlit App -->
+        <a href="http://localhost:8501" target="_blank" class="btn btn-primary" id="launch-app-btn">
+          <span>🚀 Lancer le Radar</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <div class="badge-pill">
+          <span class="dot"></span>
+          Veille Stratégique sur la Commande Publique
+        </div>
+        <h2>
+          Ne subissez plus les appels d'offres.<br>
+          <span class="text-gradient">Anticipez-les 3 à 12 mois avant leur parution.</span>
+        </h2>
+        <p class="hero-desc">
+          <strong>200+ milliards d'euros</strong> d'achats publics par an en France. 85% des PME candidates arrivent trop tard quand le cahier des charges est déjà figé. Cap Marchés croise les données souveraines d'APProch, DECP et INSEE Sirene pour vous donner un temps d'avance décisif.
+        </p>
+        <div class="hero-cta">
+          <!-- Main Action: Launch Streamlit -->
+          <a href="http://localhost:8501" target="_blank" class="btn btn-primary btn-lg">
+            <span>🚀 Découvrir le Radar en direct (Streamlit)</span>
+          </a>
+          <a href="#probleme" class="btn btn-outline btn-lg">
+            <span>Comprendre le problème</span>
+          </a>
+        </div>
+        <div class="live-status">
+          <div class="pulse-dot"></div>
+          <span>Connecté aux bases officielles de l'État · Zéro hallucination</span>
+        </div>
+      </div>
+
+      <!-- Interactive Preview Mockup Card -->
+      <div class="mockup-preview">
+        <div class="mockup-card">
+          <div class="mockup-header">
+            <span class="mockup-tag-new">✨ NOUVEAU SIGNAL DÉTECTÉ</span>
+            <div class="mockup-score-box">
+              <span class="mockup-score-num">88</span>
+              <span class="mockup-score-max">/ 100</span>
+            </div>
+          </div>
+          <div class="mockup-title">Plateforme logicielle SIRH SaaS & Gestion des temps (GTA)</div>
+          <div class="mockup-buyer">
+            <span>🏛️ Région Île-de-France (Sirene vérifié)</span>
+            <span>•</span>
+            <span>📍 Paris (75)</span>
+          </div>
+          <div class="mockup-metrics">
+            <div class="mockup-metric-item">
+              <span>Budget estimé</span>
+              <strong>150 000 € - 300 000 €</strong>
+            </div>
+            <div class="mockup-metric-item">
+              <span>Publication prévue</span>
+              <strong>Dans 60 jours</strong>
+            </div>
+          </div>
+          <div class="mockup-bars">
+            <div class="bar-row">
+              <span>Pertinence métier & Sémantique</span>
+              <strong>32 / 35 pts</strong>
+            </div>
+            <div class="bar-fill"><div class="bar-value" style="width: 91%;"></div></div>
+            <div class="bar-row" style="margin-top: 0.4rem;">
+              <span>Territoire, Budget & Calendrier</span>
+              <strong>56 / 65 pts</strong>
+            </div>
+            <div class="bar-fill"><div class="bar-value" style="width: 86%;"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust Bar -->
+  <section class="trust-bar">
+    <div class="container">
+      <div class="trust-title">Données 100% Souveraines · Licence Ouverte Etalab 2.0</div>
+      <div class="trust-badges">
+        <div class="trust-badge-item">
+          <span class="icon">🏛️</span>
+          <span><strong>APProch</strong> (Projets d'achats futurs de l'État)</span>
+        </div>
+        <div class="trust-badge-item">
+          <span class="icon">📊</span>
+          <span><strong>DECP</strong> (Données Essentielles des Marchés Publics)</span>
+        </div>
+        <div class="trust-badge-item">
+          <span class="icon">🏢</span>
+          <span><strong>INSEE Sirene</strong> (Répertoire officiel des acheteurs)</span>
+        </div>
+        <div class="trust-badge-item">
+          <span class="icon">⚖️</span>
+          <span><strong>Art. R2111-1</strong> (Sourçage réglementaire autorisé)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problem vs Solution Section -->
+  <section class="compare-section" id="probleme">
+    <div class="container">
+      <div class="section-head">
+        <h2>Pourquoi la veille classique échoue</h2>
+        <p>Le fossé entre chercher sur le BOAMP à la dernière minute et anticiper avec Cap Marchés.</p>
+      </div>
+
+      <div class="compare-grid">
+        <!-- Bad approach -->
+        <div class="compare-card compare-bad">
+          <span class="compare-tag tag-bad">La veille traditionnelle (À la traîne)</span>
+          <div class="compare-title">Réactive, tardive & épuisante</div>
+          <ul class="compare-list">
+            <li><strong>Découverte à J-20</strong> : L'appel d'offres est déjà rédigé, le cahier des charges est figé et souvent taillé sur mesure pour le sortant.</li>
+            <li><strong>Des heures perdues</strong> : Devoir éplucher manuellement le BOAMP, le JOUE et des dizaines de profils acheteurs hétérogènes.</li>
+            <li><strong>Angle mort sur l'acheteur</strong> : Aucun historique sur les titulaires actuels ni sur les budgets effectivement engagés.</li>
+            <li><strong>Filtres par mots-clés rigides</strong> : Des centaines de marchés pertinents manqués à cause de formulations administratives opaques.</li>
+          </ul>
+        </div>
+
+        <!-- Good approach -->
+        <div class="compare-card compare-good" id="methode">
+          <span class="compare-tag tag-good">Le Radar Cap Marchés</span>
+          <div class="compare-title">Prédictif, explicable & souverain</div>
+          <ul class="compare-list">
+            <li><strong>Anticipation à J-180</strong> : Détectez les besoins dès la programmation budgétaire grâce aux déclarations APProch.</li>
+            <li><strong>Scoring hybride transparent (sur 100)</strong> : Compréhension sémantique IA (35 pts), mots-clés, territoire, budget et calendrier.</li>
+            <li><strong>Enrichissement Sirene en cache local</strong> : Dénomination officielle, commune, SIRET de l'acheteur résolus sans surcoût.</li>
+            <li><strong>Sourçage légal autorisé</strong> : Échangez avec l'acheteur en amont conformément au Code de la commande publique.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 Steps Section -->
+  <section class="steps-section" id="etapes">
+    <div class="container">
+      <div class="section-head">
+        <h2>La méthode en 4 étapes</h2>
+        <p>Un parcours rigoureux pour transformer la donnée publique ouverte en contrats signés.</p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <div class="step-title">Détecter en amont</div>
+          <div class="step-desc">Cap Marchés interroge en continu les projets prévisionnels d'achats et les marchés existants arrivant à échéance.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <div class="step-title">Scorer & Justifier</div>
+          <div class="step-desc">Chaque opportunité est notée de 0 à 100 avec un dossier de preuves structuré. Zéro boîte noire, zéro hallucination.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <div class="step-title">Préparer l'approche</div>
+          <div class="step-desc">Générez une fiche commerciale factuelle pour contacter les prescripteurs dans le cadre légal du sourçage public.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">4</div>
+          <div class="step-title">Veille automatisée</div>
+          <div class="step-desc">Notre robot compare les flux avec la base locale et ne vous alerte que sur les marchés véritablement inédits.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- KPIs Section -->
+  <section class="kpi-section" id="chiffres">
+    <div class="container">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-num">200+ Mrd €</div>
+          <div class="kpi-label">Commande publique</div>
+          <div class="kpi-desc">Le premier marché de France accessible à vos offres innovantes.</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-num">90 à 365 j</div>
+          <div class="kpi-label">D'anticipation</div>
+          <div class="kpi-desc">Prenez l'avantage avant que vos concurrents n'apprennent l'existence du besoin.</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-num">100% Souverain</div>
+          <div class="kpi-label">Données officielles</div>
+          <div class="kpi-desc">APProch, DECP et INSEE Sirene sans aucun scraping sauvage.</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-num">0 Hallucination</div>
+          <div class="kpi-label">Preuves vérifiables</div>
+          <div class="kpi-desc">Chaque point attribué est appuyé sur des faits administratifs réels.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA Banner -->
+  <section class="cta-banner">
+    <div class="container">
+      <div class="cta-box">
+        <h2>Prêt à changer d'échelle sur la commande publique ?</h2>
+        <p>Lancez le Radar Cap Marchés et découvrez immédiatement les projets d'achats publics qualifiés pour votre entreprise.</p>
+        <div class="btn-group">
+          <a href="http://localhost:8501" target="_blank" class="btn btn-primary btn-lg">
+            <span>🚀 Lancer l'Application Streamlit</span>
+          </a>
+          <a href="https://github.com/BRIKIAchraf/cap-marches" target="_blank" class="btn btn-outline btn-lg">
+            <span>⭐ Voir sur GitHub</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container footer-wrap">
+      <div>
+        <strong>Cap Marchés</strong> · Intelligence commerciale augmentée par les données publiques.
+      </div>
+      <div>
+        Licence Ouverte Etalab 2.0 · Python 3.12 · Streamlit
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Détection de l'état de l'application locale
+    const launchBtn = document.getElementById('launch-app-btn');
+    fetch('http://localhost:8501/_stcore/health', { mode: 'no-cors' })
+      .then(() => {
+        console.log('Streamlit est actif sur le port 8501');
+      })
+      .catch(() => {
+        console.log('Streamlit en attente de démarrage (./start.ps1)');
+      });
+  </script>
+</body>
+</html>
