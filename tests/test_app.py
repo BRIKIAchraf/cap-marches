@@ -19,6 +19,7 @@ class AppSmokeTests(unittest.TestCase):
         self.assertTrue(any("Recherche active" in item.value for item in app.caption))
 
 
+
 if __name__ == "__main__":
     unittest.main()
 

@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+from dotenv import load_dotenv
 
 import storage
 from services import agent, hemicycle, llm
@@ -14,6 +15,7 @@ from ui import empty_state, footer, hero, navigation, safe_page_link, section, s
 
 
 ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(ROOT / ".env")
 setup_page("Agent de veille", "🤖")
 navigation()
 profile = storage.load_profile()
@@ -53,8 +55,8 @@ with mission:
 with settings:
     offline = st.toggle(
         "Mode démonstration",
-        value=not hemicycle.is_configured(),
-        help="Utilise les échantillons locaux sans consommer de crédit.",
+        value=False,
+        help="Option explicite pour tester l'interface avec les échantillons locaux. Elle ne doit pas être utilisée pour une analyse réelle.",
     )
     limit = st.slider("Résultats par source", 5, 50, 20, 5)
     launch = st.button(

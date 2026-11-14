@@ -28,13 +28,6 @@ section(
     "Soyez précis sur les problèmes résolus, vos prestations et vos marchés cibles.",
 )
 
-preset_col1, preset_col2 = st.columns([1.2, 0.8])
-with preset_col1:
-    if st.button("✨ Appliquer le profil recommandé (Omegup · SaaS RH)", help="Remplit automatiquement les mots-clés SIRH et codes CPV recommandés."):
-        storage.ensure_default_profile()
-        st.success("Profil mis à jour avec les paramètres recommandés !")
-        st.rerun()
-
 with st.form("company-profile"):
     identity, targeting = st.columns([1.15, 0.85])
     with identity:

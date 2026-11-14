@@ -7,7 +7,6 @@ par webhook (Slack/Discord/Teams), email SMTP ou log d'audit.
 
 from __future__ import annotations
 
-import json
 import os
 from datetime import datetime, timezone
 from typing import Any
@@ -91,10 +90,14 @@ def run_single_search(search: dict[str, Any]) -> dict[str, Any]:
             except hemicycle.HemicycleError:
                 records = []
         if not records:
-            from pathlib import Path
-            sample_path = Path(__file__).resolve().parents[1] / "data" / "sample_projects.json"
-            if sample_path.exists():
-                records = json.loads(sample_path.read_text(encoding="utf-8"))
+            return {
+                "search_name": name,
+                "total_found": 0,
+                "new_count": 0,
+                "new_records": [],
+                "status": "no_results_from_source",
+                "channel": "none",
+            }
     else:
         if hemicycle.is_configured():
             try:
@@ -109,10 +112,14 @@ def run_single_search(search: dict[str, Any]) -> dict[str, Any]:
             except decp.DecpError:
                 records = []
         if not records:
-            from pathlib import Path
-            sample_path = Path(__file__).resolve().parents[1] / "data" / "sample.json"
-            if sample_path.exists():
-                records = json.loads(sample_path.read_text(encoding="utf-8"))
+            return {
+                "search_name": name,
+                "total_found": 0,
+                "new_count": 0,
+                "new_records": [],
+                "status": "no_results_from_source",
+                "channel": "none",
+            }
 
     if not records:
         return {

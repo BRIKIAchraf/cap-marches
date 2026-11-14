@@ -23,6 +23,7 @@ from ui import brand, empty_state, euro, footer, hero, landing_storytelling, sec
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / ".env")
 setup_page("Radar d'opportunités")
+profile_defaults = storage.load_profile() or {}
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
@@ -50,17 +51,17 @@ def load_records(
                 ),
                 "Hémicycle · projets_achats_publics",
             )
-        if hemicycle.is_configured():
-            try:
-                return (
-                    hemicycle.fetch_upcoming_projects(
-                        keyword, department=department, category=category, limit=limit
-                    ),
-                    "Hémicycle · projets_achats_publics",
-                )
-            except hemicycle.HemicycleError:
-                pass
-        return load_json_sample("sample_projects.json"), "Démonstration synthétique"
+        if not hemicycle.is_configured():
+            raise hemicycle.HemicycleError(
+                "La vue des achats à venir nécessite HEMICYCLE_API_KEY. "
+                "Choisissez explicitement « Démonstration hors ligne » uniquement pour tester l'interface."
+            )
+        return (
+            hemicycle.fetch_upcoming_projects(
+                keyword, department=department, category=category, limit=limit
+            ),
+            "Hémicycle · projets_achats_publics",
+        )
     if provider == "Hémicycle":
         return (
             hemicycle.fetch_contracts(keyword, department=department, limit=limit),
@@ -68,26 +69,29 @@ def load_records(
         )
     if provider == "DECP officielle":
         return decp.fetch_contracts(keyword, limit=limit), "DECP officielle"
+    hemi_error: hemicycle.HemicycleError | None = None
     if hemicycle.is_configured():
         try:
             return (
                 hemicycle.fetch_contracts(keyword, department=department, limit=limit),
                 "Hémicycle · marches_publics",
             )
-        except hemicycle.HemicycleError:
-            pass
+        except hemicycle.HemicycleError as exc:
+            hemi_error = exc
     try:
         return decp.fetch_contracts(keyword, limit=limit), "DECP officielle"
-    except decp.DecpError:
-        return load_json_sample("sample.json"), "Démonstration synthétique"
+    except decp.DecpError as exc:
+        if hemi_error:
+            raise decp.DecpError(
+                f"Hémicycle et DECP sont indisponibles. Hémicycle : {hemi_error}. DECP : {exc}"
+            ) from exc
+        raise
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def load_organizations(
-    identifiers: tuple[str, ...], identifier_type: str, synthetic: bool
+    identifiers: tuple[str, ...], identifier_type: str
 ) -> tuple[list[dict[str, Any]], str]:
-    if synthetic:
-        return load_json_sample("sample_organizations.json"), "Sirene de démonstration"
     if not hemicycle.is_configured() or not identifiers:
         return [], "Sirene non connecté"
     return (
@@ -181,7 +185,6 @@ def perform_analysis(config: dict[str, Any]) -> dict[str, Any]:
             organizations, sirene_label = load_organizations(
                 identifiers,
                 identifier_type,
-                synthetic="synthétique" in source_label.lower(),
             )
         except hemicycle.HemicycleError:
             organizations, sirene_label = [], "Sirene temporairement indisponible"
@@ -199,7 +202,7 @@ def perform_analysis(config: dict[str, Any]) -> dict[str, Any]:
             is_new_flags = storage.mark_opportunities_seen(records_list, dataset)
             frame["statut"] = ["✨ Nouveau" if n else "👁️ Déjà vu" for n in is_new_flags]
         except Exception:
-            frame["statut"] = "✨ Nouveau"
+            frame["statut"] = "⚪ Statut non vérifié"
     else:
         frame["statut"] = pd.Series(dtype=str)
     return {
@@ -235,11 +238,12 @@ with st.sidebar:
         analysis = "future" if mode_label == "Achats à venir" else "history"
         keyword = st.text_input(
             "Votre offre",
-            value="logiciel RH",
+            value=str(profile_defaults.get("keywords", "")),
             placeholder="Ex. cybersécurité, formation, conseil…",
         )
         department = st.text_input(
             "Territoire",
+            value=str(profile_defaults.get("departments", "")).split(",")[0].strip(),
             placeholder="Département, ex. 75",
         )
         category = ""
@@ -253,7 +257,10 @@ with st.sidebar:
             "Fourchette de marché",
             min_value=0,
             max_value=5_000_000,
-            value=(50_000, 500_000),
+            value=(
+                int(float(profile_defaults.get("minimum", 0) or 0)),
+                int(float(profile_defaults.get("maximum", 500_000) or 500_000)),
+            ),
             step=10_000,
             format="%d €",
         )
@@ -312,49 +319,32 @@ if submitted:
 
 result = st.session_state.get("analysis_result")
 if not result:
-    st.markdown("### 🎯 Explorez vos opportunités en 1 clic")
-    cta_col1, cta_col2 = st.columns([1.2, 0.8])
-    with cta_col1:
-        if st.button(
-            "🚀 Lancer la détection en direct (Omegup · SaaS RH)",
-            type="primary",
-            width="stretch",
-            help="Charge instantanément les données officielles avec le profil préconfiguré d'Omegup.",
-        ):
-            demo_config = {
-                "analysis": "future",
-                "keyword": "logiciel RH",
-                "department": "75",
-                "category": "",
-                "minimum": 30_000.0,
-                "maximum": 500_000.0,
-                "provider": "Auto",
-                "use_semantic": True,
-                "enrich": True,
-                "limit": 50,
-            }
-            with st.spinner("Détection en direct des projets d'achats publics pour Omegup…"):
-                st.session_state["analysis_result"] = perform_analysis(demo_config)
+    saved = storage.list_saved_searches()
+    if saved:
+        section("Reprendre une veille sauvegardée", "Les résultats seront recalculés depuis les sources officielles au moment du chargement.")
+        selected_saved = st.selectbox(
+            "Veille enregistrée",
+            range(len(saved)),
+            format_func=lambda i: f"📂 {saved[i]['name']}",
+            label_visibility="collapsed",
+        )
+        if st.button("Recalculer cette veille", width="stretch"):
+            with st.spinner("Relecture des sources officielles…"):
+                saved_query = {
+                    "provider": "Auto",
+                    "use_semantic": True,
+                    "enrich": True,
+                    "limit": 100,
+                    **saved[selected_saved]["query"],
+                }
+                st.session_state["analysis_result"] = perform_analysis(saved_query)
                 st.session_state["selected_opportunity"] = 0
                 st.rerun()
-    with cta_col2:
-        saved = storage.list_saved_searches()
-        if saved:
-            selected_saved = st.selectbox(
-                "Ou recharger une veille",
-                range(len(saved)),
-                format_func=lambda i: f"📂 {saved[i]['name']}",
-                label_visibility="collapsed",
-            )
-            if st.button("Charger cette veille", width="stretch"):
-                with st.spinner("Rechargement de la veille…"):
-                    st.session_state["analysis_result"] = perform_analysis(saved[selected_saved]["query"])
-                    st.session_state["selected_opportunity"] = 0
-                    st.rerun()
-        else:
-            st.info("💡 Utilisez le panneau à gauche pour une recherche personnalisée.")
-
-    landing_storytelling()
+    empty_state(
+        "Commencez par une recherche en direct",
+        "Aucune donnée n'est affichée avant votre requête. Les résultats viennent de Hémicycle ou de DECP ; le mode démonstration est séparé et explicite.",
+        "⌖",
+    )
     st.stop()
 
 frame: pd.DataFrame = result["frame"]

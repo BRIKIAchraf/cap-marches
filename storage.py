@@ -342,26 +342,3 @@ def list_alert_history(limit: int = 10) -> list[dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
-def ensure_default_profile() -> dict[str, Any]:
-    """Garantit un profil par défaut enrichi et pertinent pour les démonstrations."""
-    current = load_profile()
-    if not current:
-        default_profile = {
-            "company_name": "Omegup",
-            "offer": "Éditeur et intégrateur d'une suite logicielle RH SaaS pour les organisations publiques : gestion des temps et des activités (GTA), planning dématérialisé, suivi des congés, SIRH et accompagnement au changement.",
-            "keywords": "logiciel RH, SIRH, gestion des temps, GTA, paie, congés, planning, SaaS, dématérialisation",
-            "cpv_codes": "48000000, 72260000, 48450000",
-            "departments": "75, 92, 93, 94",
-            "minimum": 30_000,
-            "maximum": 500_000,
-        }
-        save_profile(default_profile)
-        return load_profile() or default_profile
-    if not current.get("keywords"):
-        updated = dict(current)
-        updated["keywords"] = "logiciel RH, SIRH, gestion des temps, GTA, paie, congés, planning, SaaS"
-        updated["cpv_codes"] = current.get("cpv_codes") or "48000000, 72260000, 48450000"
-        save_profile(updated)
-        return load_profile() or updated
-    return current
-

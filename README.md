@@ -65,8 +65,11 @@ Copy-Item .env.example .env
 streamlit run app.py
 ```
 
-Sans clé, la démonstration utilise des données synthétiques clairement
-signalées. L'historique DECP reste accessible sans authentification.
+Sans clé, la vue des achats à venir reste bloquée avec un message de
+configuration : aucune donnée synthétique n'est injectée automatiquement.
+L'historique DECP reste accessible sans authentification. Le mode
+« Démonstration hors ligne » est disponible uniquement comme choix explicite
+pour tester l'interface.
 
 ## Configuration
 
