@@ -5,7 +5,8 @@ from __future__ import annotations
 import streamlit as st
 
 import storage
-from ui import footer, hero, navigation, section, setup_page
+from ui import hero, navigation, section, setup_page
+from site_footer import render_footer
 
 
 setup_page("Profil entreprise", "🏢")
@@ -104,4 +105,4 @@ first.info("**Décrivez les résultats livrés**\n\nPréférez « migration SIRH
 second.info("**Ciblez vos territoires**\n\nSéparez les départements par des virgules.")
 third.info("**Restez non sensible**\n\nNe saisissez ni clé API, ni mot de passe, ni donnée personnelle.")
 
-footer()
+render_footer()
