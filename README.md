@@ -1,8 +1,8 @@
 # Cap Marchés
 
-Cap Marchés transforme les données de marchés publics en signaux de
-prospection explicables : acheteurs pertinents, budgets observés et fenêtres de
-renouvellement estimées.
+Cap Marchés transforme trois jeux publics en signaux de prospection
+explicables : projets d'achats à venir, marchés déjà notifiés et identité des
+acheteurs issue de Sirene.
 
 ## Démarrage rapide
 
@@ -23,30 +23,34 @@ Copy-Item .env.example .env
 streamlit run app.py
 ```
 
-L'application fonctionne immédiatement avec l'API DECP sans clé. Le mode
-`Démonstration hors ligne` utilise des lignes synthétiques clairement signalées.
+La vue historique fonctionne avec l'API DECP sans clé. La vue prospective
+requiert Hémicycle ; sans clé, elle utilise des lignes synthétiques clairement
+signalées.
 Avant un usage public, renseignez votre adresse dans `APP_CONTACT` du fichier
 `.env` afin que les appels de données soient correctement identifiés.
 
 ## Connecter Hémicycle
 
-1. Ajoutez `https://api.hemicycle.ai/mcp` à votre assistant.
-2. Demandez :
-
-   > Appelle guide. Je construis un radar commercial à partir des marchés
-   > publics DECP. Donne le nom exact de l'outil, ses paramètres, son coût, sa
-   > source, sa licence et un exemple de réponse minimal.
-
-3. Créez une clé API Hémicycle.
-4. Copiez `.env.example` vers `.env`, puis renseignez :
+1. Créez une clé sur <https://hemicycle.ai/compte-api>.
+2. Copiez `.env.example` vers `.env`, puis renseignez :
 
 ```text
 HEMICYCLE_API_KEY=votre_cle
-HEMICYCLE_RECORDS_URL=url_exacte_retournee_par_guide
+HEMICYCLE_API_URL=https://api.hemicycle.ai/v1/jeux/interroger
+HEMICYCLE_API_VERSION=2026-10-01
 ```
 
-L'adaptateur générique envoie `query` et `limit`. Si l'outil indiqué par
-`guide` emploie d'autres noms, modifiez seulement `services/hemicycle.py`.
+L'application emploie deux pages Hémicycle pour une analyse enrichie : une page
+du jeu principal et une page Sirene. Chaque page coûte actuellement 1 crédit.
+
+### Jeux exploités
+
+- `projets_achats_publics` : projets annoncés sur APProch avant l'appel
+  d'offres, dates, budgets estimés et liens de consultation ;
+- `marches_publics` : historique DECP, montants, durées, acheteurs et
+  titulaires ;
+- `sirene_etablissements` : dénomination, activité et commune de chaque
+  acheteur.
 
 ## Connecter Featherless
 
@@ -62,7 +66,14 @@ classement et reçoit un sous-ensemble limité des champs publics.
 
 ## Score
 
-Le score sur 100 est entièrement déterministe :
+Le score sur 100 est entièrement déterministe. Pour les projets à venir :
+
+- correspondance des mots-clés : 30 points ;
+- territoire : 20 points ;
+- tranche de montant : 20 points ;
+- proximité de la publication : 30 points.
+
+Pour les marchés notifiés :
 
 - correspondance des mots-clés : 30 points ;
 - territoire : 20 points ;
@@ -80,7 +91,12 @@ python -m unittest discover -s tests -v
 
 ## Sources et réutilisation
 
-- Hémicycle : source et licence retournées par l'outil `guide`.
+- Hémicycle, projets d'achats publics :
+  <https://hemicycle.ai/bibliotheque/projets_achats_publics>
+- Hémicycle, marchés publics notifiés :
+  <https://hemicycle.ai/bibliotheque/marches_publics>
+- Hémicycle, répertoire Sirene :
+  <https://hemicycle.ai/bibliotheque/sirene_etablissements>
 - Données essentielles de la commande publique :
   <https://data.economie.gouv.fr/explore/assets/decp-2022-marches-valides/>
 - API Explore :
@@ -93,9 +109,9 @@ pendant une heure et s'identifie par un `User-Agent`. Remplacez le contact du
 
 ## Démo de trois minutes
 
-1. Saisir une offre, par exemple `logiciel RH`.
-2. Lancer l'analyse et montrer les quatre indicateurs.
-3. Ouvrir le meilleur score et expliquer ses quatre composantes.
-4. Générer la note Featherless.
-5. Terminer par la source, la licence et les limites de l'estimation.
+1. Ouvrir la vue `Opportunités à venir` et saisir `logiciel RH`.
+2. Montrer la date de publication, le budget et le lien de consultation.
+3. Montrer le nom de l'acheteur enrichi par Sirene.
+4. Passer à l'historique pour expliquer les budgets et renouvellements.
+5. Générer la note Featherless et terminer par les sources et limites.
 

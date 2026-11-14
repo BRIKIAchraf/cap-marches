@@ -1,0 +1,69 @@
+[
+  {
+    "siren": "990000001",
+    "siret": "99000000100011",
+    "siege": true,
+    "denomination": "Métropole Démonstration Paris",
+    "activite_principale": "84.11Z",
+    "etat_administratif": "A",
+    "adresse": "1 place de la Démonstration",
+    "code_postal": "75000",
+    "commune": "Paris"
+  },
+  {
+    "siren": "990000002",
+    "siret": "99000000200012",
+    "siege": true,
+    "denomination": "Groupement Public Démonstration Nord",
+    "activite_principale": "84.12Z",
+    "etat_administratif": "A",
+    "adresse": "2 avenue des Données",
+    "code_postal": "92000",
+    "commune": "Nanterre"
+  },
+  {
+    "siren": "990000003",
+    "siret": "99000000300013",
+    "siege": true,
+    "denomination": "Établissement Public Démonstration Rhône",
+    "activite_principale": "84.11Z",
+    "etat_administratif": "A",
+    "adresse": "3 rue de l'Open Data",
+    "code_postal": "69000",
+    "commune": "Lyon"
+  },
+  {
+    "siren": "990000004",
+    "siret": "99000000400014",
+    "siege": true,
+    "denomination": "Agence Publique Démonstration Aquitaine",
+    "activite_principale": "84.13Z",
+    "etat_administratif": "A",
+    "adresse": "4 quai des Marchés",
+    "code_postal": "33000",
+    "commune": "Bordeaux"
+  },
+  {
+    "siren": "990000005",
+    "siret": "99000000500015",
+    "siege": true,
+    "denomination": "Collectivité Démonstration Centre",
+    "activite_principale": "84.11Z",
+    "etat_administratif": "A",
+    "adresse": "5 rue du Prototype",
+    "code_postal": "45000",
+    "commune": "Orléans"
+  },
+  {
+    "siren": "990000006",
+    "siret": "99000000600016",
+    "siege": true,
+    "denomination": "Syndicat Public Démonstration Sud-Ouest",
+    "activite_principale": "84.11Z",
+    "etat_administratif": "A",
+    "adresse": "6 boulevard du Numérique",
+    "code_postal": "33000",
+    "commune": "Bordeaux"
+  }
+]
+

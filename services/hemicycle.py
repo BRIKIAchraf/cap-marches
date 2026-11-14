@@ -1,16 +1,25 @@
-"""Adaptateur Hémicycle configurable.
+"""Client Hémicycle pour les trois jeux utilisés par Cap Marchés.
 
-Hémicycle publie plusieurs outils. Le hackathon demande d'appeler `guide`
-pour obtenir l'outil et la route adaptés. L'URL exacte est donc injectée via
-HEMICYCLE_RECORDS_URL au lieu d'être devinée ici.
+Jeux officiels :
+- ``projets_achats_publics`` : achats annoncés avant l'appel d'offres ;
+- ``marches_publics`` : marchés déjà notifiés ;
+- ``sirene_etablissements`` : identité des acheteurs et titulaires.
 """
 
 from __future__ import annotations
 
 import os
+from collections.abc import Iterable
 from typing import Any
 
 import requests
+
+
+API_URL = "https://api.hemicycle.ai/v1/jeux/interroger"
+API_VERSION = "2026-10-01"
+UPCOMING_DATASET = "projets_achats_publics"
+CONTRACTS_DATASET = "marches_publics"
+SIRENE_DATASET = "sirene_etablissements"
 
 
 class HemicycleError(RuntimeError):
@@ -18,56 +27,188 @@ class HemicycleError(RuntimeError):
 
 
 def is_configured() -> bool:
-    return bool(
-        os.getenv("HEMICYCLE_API_KEY", "").strip()
-        and os.getenv("HEMICYCLE_RECORDS_URL", "").strip()
+    return bool(os.getenv("HEMICYCLE_API_KEY", "").strip())
+
+
+def _extract_rows(payload: Any) -> list[dict[str, Any]]:
+    """Accepte les enveloppes courantes sans masquer une réponse invalide."""
+
+    if isinstance(payload, list):
+        return [row for row in payload if isinstance(row, dict)]
+    if isinstance(payload, dict):
+        for key in ("lignes", "resultats", "results", "data", "items", "rows"):
+            value = payload.get(key)
+            if isinstance(value, list):
+                return [row for row in value if isinstance(row, dict)]
+            if isinstance(value, dict):
+                try:
+                    return _extract_rows(value)
+                except HemicycleError:
+                    pass
+        for key in ("resultat", "reponse", "response"):
+            value = payload.get(key)
+            if isinstance(value, (dict, list)):
+                return _extract_rows(value)
+    raise HemicycleError(
+        "Format de réponse Hémicycle non reconnu. Consultez la réponse dans "
+        "la documentation de l'API."
+    )
+
+
+def query_dataset(
+    dataset: str,
+    *,
+    filters: list[dict[str, Any]] | None = None,
+    search: str | None = None,
+    sort: str | None = None,
+    limit: int = 100,
+    timeout: float = 20.0,
+    session: requests.Session | None = None,
+) -> list[dict[str, Any]]:
+    """Interroge un jeu Hémicycle par l'API documentée."""
+
+    api_key = os.getenv("HEMICYCLE_API_KEY", "").strip()
+    if not api_key:
+        raise HemicycleError("Ajoutez HEMICYCLE_API_KEY dans le fichier .env.")
+
+    body: dict[str, Any] = {
+        "jeu": dataset,
+        "limite": max(1, min(int(limit), 100)),
+    }
+    if filters:
+        body["filtres"] = filters
+    if search and search.strip():
+        body["recherche"] = search.strip()
+    if sort:
+        body["tri"] = sort
+
+    url = os.getenv("HEMICYCLE_API_URL", API_URL).strip() or API_URL
+    version = os.getenv("HEMICYCLE_API_VERSION", API_VERSION).strip() or API_VERSION
+    contact = os.getenv("APP_CONTACT", "").strip() or "contact-non-renseigne"
+    client = session or requests
+    try:
+        response = client.post(
+            url,
+            json=body,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Hemicycle-Version": version,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "User-Agent": f"CapMarchesHackathon/2.0 (contact: {contact})",
+            },
+            timeout=timeout,
+        )
+        if response.status_code == 401:
+            raise HemicycleError("Clé Hémicycle absente, expirée ou invalide.")
+        if response.status_code == 402:
+            raise HemicycleError("Crédits Hémicycle insuffisants.")
+        response.raise_for_status()
+        payload = response.json()
+    except HemicycleError:
+        raise
+    except (requests.RequestException, ValueError) as exc:
+        raise HemicycleError(f"Hémicycle est indisponible : {exc}") from exc
+    return _extract_rows(payload)
+
+
+def fetch_upcoming_projects(
+    keyword: str,
+    *,
+    department: str = "",
+    category: str = "",
+    limit: int = 100,
+    session: requests.Session | None = None,
+) -> list[dict[str, Any]]:
+    """Retourne les projets d'achat annoncés avant publication."""
+
+    filters: list[dict[str, Any]] = []
+    if department.strip():
+        filters.append(
+            {
+                "colonne": "departement_s_d_execution_du_marche",
+                "op": "like",
+                "valeur": f"%{department.strip()}%",
+            }
+        )
+    if category.strip():
+        filters.append(
+            {
+                "colonne": "categorie_d_achat",
+                "op": "eq",
+                "valeur": category.strip(),
+            }
+        )
+    return query_dataset(
+        UPCOMING_DATASET,
+        filters=filters,
+        search=keyword,
+        sort="date_previsionnelle_de_publication",
+        limit=limit,
+        session=session,
     )
 
 
 def fetch_contracts(
     keyword: str,
     *,
+    department: str = "",
     limit: int = 100,
-    timeout: float = 15.0,
     session: requests.Session | None = None,
 ) -> list[dict[str, Any]]:
-    """Appelle la route Hémicycle fournie par `guide`.
+    """Retourne les marchés déjà notifiés."""
 
-    L'adaptateur accepte les formes courantes `results`, `data` et liste JSON.
-    Si la route retournée par `guide` emploie d'autres paramètres, adaptez
-    uniquement ce petit fichier.
-    """
-
-    api_key = os.getenv("HEMICYCLE_API_KEY", "").strip()
-    url = os.getenv("HEMICYCLE_RECORDS_URL", "").strip()
-    if not api_key or not url:
-        raise HemicycleError(
-            "Hémicycle n'est pas configuré. Renseignez HEMICYCLE_API_KEY et "
-            "HEMICYCLE_RECORDS_URL dans .env."
+    filters = []
+    if department.strip():
+        filters.append(
+            {
+                "colonne": "lieuexecution_code",
+                "op": "eq",
+                "valeur": department.strip(),
+            }
         )
+    return query_dataset(
+        CONTRACTS_DATASET,
+        filters=filters,
+        search=keyword,
+        sort="datenotification",
+        limit=limit,
+        session=session,
+    )
 
-    client = session or requests
-    try:
-        response = client.get(
-            url,
-            params={"query": keyword.strip(), "limit": max(1, min(limit, 100))},
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Accept": "application/json",
-                "User-Agent": "CapMarchesHackathon/1.0",
-            },
-            timeout=timeout,
-        )
-        response.raise_for_status()
-        payload = response.json()
-    except (requests.RequestException, ValueError) as exc:
-        raise HemicycleError(f"Hémicycle est indisponible : {exc}") from exc
 
-    if isinstance(payload, list):
-        return payload
-    if isinstance(payload, dict):
-        for key in ("results", "data", "items"):
-            if isinstance(payload.get(key), list):
-                return payload[key]
-    raise HemicycleError("Format de réponse Hémicycle non reconnu.")
+def fetch_organizations(
+    identifiers: Iterable[str],
+    *,
+    identifier_type: str,
+    limit: int = 100,
+    session: requests.Session | None = None,
+) -> list[dict[str, Any]]:
+    """Enrichit un lot de SIREN ou de SIRET via le répertoire Sirene."""
 
+    column = identifier_type.lower().strip()
+    if column not in {"siren", "siret"}:
+        raise ValueError("identifier_type doit valoir 'siren' ou 'siret'.")
+    values = list(dict.fromkeys(str(value).strip() for value in identifiers if value))
+    if not values:
+        return []
+
+    filters: list[dict[str, Any]] = [
+        {
+            "colonne": column,
+            "op": "eq" if len(values) == 1 else "in",
+            "valeur": values[0] if len(values) == 1 else values,
+        }
+    ]
+    if column == "siren":
+        filters.append({"colonne": "siege", "op": "eq", "valeur": True})
+    filters.append(
+        {"colonne": "etat_administratif", "op": "eq", "valeur": "A"}
+    )
+    return query_dataset(
+        SIRENE_DATASET,
+        filters=filters,
+        sort=column,
+        limit=min(limit, 100),
+        session=session,
+    )

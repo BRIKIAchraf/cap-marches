@@ -29,6 +29,15 @@ def build_brief(records: list[dict[str, Any]], company_offer: str) -> str:
 
     compact = []
     allowed = {
+        "libelle",
+        "description",
+        "denomination_acheteur",
+        "categorie_d_achat",
+        "montant_estime_du_marche",
+        "date_previsionnelle_de_publication",
+        "date_cible_de_remise_des_offres",
+        "departement_s_d_execution_du_marche",
+        "lien_vers_la_consultation",
         "objet",
         "montant",
         "datenotification",
@@ -36,6 +45,7 @@ def build_brief(records: list[dict[str, Any]], company_offer: str) -> str:
         "date_fin_estimee",
         "lieuexecution_code",
         "acheteur_id",
+        "commune_acheteur",
         "score",
     }
     for record in records[:5]:

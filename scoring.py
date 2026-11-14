@@ -20,6 +20,18 @@ DISPLAY_COLUMNS = [
     "score",
 ]
 
+PROJECT_DISPLAY_COLUMNS = [
+    "libelle",
+    "denomination_acheteur",
+    "categorie_d_achat",
+    "montant_estime_du_marche",
+    "date_previsionnelle_de_publication",
+    "date_cible_de_remise_des_offres",
+    "departement_s_d_execution_du_marche",
+    "lien_vers_la_consultation",
+    "score",
+]
+
 
 def _tokens(text: str) -> set[str]:
     return {
@@ -73,6 +85,127 @@ def renewal_points(end_date: Any, today: date | None = None) -> int:
     if 25 <= months <= 36:
         return 10
     return 0
+
+
+def publication_points(publication_date: Any, today: date | None = None) -> int:
+    """Favorise les projets dont la publication est proche mais pas dépassée."""
+
+    if pd.isna(publication_date):
+        return 0
+    now = pd.Timestamp(today or date.today()).normalize()
+    target = pd.Timestamp(publication_date).normalize()
+    days = (target - now).days
+    if 0 <= days <= 90:
+        return 30
+    if 91 <= days <= 180:
+        return 25
+    if 181 <= days <= 365:
+        return 15
+    if days > 365:
+        return 5
+    if -30 <= days < 0:
+        return 5
+    return 0
+
+
+def parse_amount_range(value: Any) -> tuple[float | None, float | None]:
+    """Convertit les tranches APProch (`100k - 500k`, `1M - 5M`, `+100M`)."""
+
+    if value is None or pd.isna(value):
+        return None, None
+    text = str(value).lower().replace("\u202f", "").replace(" ", "")
+    matches = re.findall(r"(\d+(?:[.,]\d+)?)\s*([km]?)", text)
+    if not matches:
+        return None, None
+
+    def convert(number: str, unit: str) -> float:
+        multiplier = {"": 1.0, "k": 1_000.0, "m": 1_000_000.0}[unit]
+        return float(number.replace(",", ".")) * multiplier
+
+    numbers = [convert(number, unit) for number, unit in matches]
+    if len(numbers) == 1:
+        return (numbers[0], float("inf")) if text.startswith("+") else (
+            numbers[0],
+            numbers[0],
+        )
+    return min(numbers[0], numbers[1]), max(numbers[0], numbers[1])
+
+
+def estimated_amount_points(value: Any, minimum: float, maximum: float) -> int:
+    low, high = parse_amount_range(value)
+    if low is None or high is None:
+        return 0
+    if low <= maximum and high >= minimum:
+        return 20
+    tolerance = max((maximum - minimum) * 0.5, 10_000)
+    if low <= maximum + tolerance and high >= max(0, minimum - tolerance):
+        return 10
+    return 0
+
+
+def score_projects(
+    records: Iterable[dict[str, Any]],
+    *,
+    keyword: str,
+    location: str = "",
+    minimum: float = 0,
+    maximum: float = 1_000_000,
+    today: date | None = None,
+) -> pd.DataFrame:
+    """Normalise et classe les projets d'achats futurs d'APProch."""
+
+    frame = pd.DataFrame(list(records))
+    if frame.empty:
+        return pd.DataFrame(columns=PROJECT_DISPLAY_COLUMNS)
+    for column in (
+        "code",
+        "libelle",
+        "description",
+        "statut",
+        "siren_de_l_entite_acheteuse",
+        "categorie_d_achat",
+        "code_s_cpv",
+        "date_previsionnelle_de_publication",
+        "date_cible_de_remise_des_offres",
+        "lien_vers_la_consultation",
+        "montant_estime_du_marche",
+        "duree_previsionnelle_du_marche",
+        "departement_s_d_execution_du_marche",
+    ):
+        if column not in frame:
+            frame[column] = None
+
+    frame["date_previsionnelle_de_publication"] = pd.to_datetime(
+        frame["date_previsionnelle_de_publication"], errors="coerce"
+    )
+    frame["date_cible_de_remise_des_offres"] = pd.to_datetime(
+        frame["date_cible_de_remise_des_offres"], errors="coerce"
+    )
+    combined_text = (
+        frame["libelle"].fillna("").astype(str)
+        + " "
+        + frame["description"].fillna("").astype(str)
+    )
+    frame["score_mots"] = combined_text.map(
+        lambda value: keyword_points(value, keyword)
+    )
+    frame["score_territoire"] = frame[
+        "departement_s_d_execution_du_marche"
+    ].map(lambda value: location_points(value, location))
+    frame["score_montant"] = frame["montant_estime_du_marche"].map(
+        lambda value: estimated_amount_points(value, minimum, maximum)
+    )
+    frame["score_calendrier"] = frame[
+        "date_previsionnelle_de_publication"
+    ].map(lambda value: publication_points(value, today))
+    frame["score"] = frame[
+        ["score_mots", "score_territoire", "score_montant", "score_calendrier"]
+    ].sum(axis=1)
+    return frame.sort_values(
+        ["score", "date_previsionnelle_de_publication"],
+        ascending=[False, True],
+        na_position="last",
+    ).reset_index(drop=True)
 
 
 def score_contracts(
