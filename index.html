@@ -300,6 +300,13 @@
       background: linear-gradient(90deg, var(--cyan) 0%, var(--primary) 50%, var(--emerald) 100%);
     }
 
+    .mockup-note {
+      margin-top: 1rem;
+      color: var(--text-dim);
+      font-size: 0.72rem;
+      text-align: center;
+    }
+
     .mockup-header {
       display: flex;
       justify-content: space-between;
@@ -744,7 +751,7 @@
     }
   </style>
 </head>
-<body>
+<body data-app-url="">
 
   <!-- Navigation -->
   <header>
@@ -766,7 +773,7 @@
 
       <div class="nav-actions">
         <!-- Direct Link to Streamlit App -->
-        <a href="http://localhost:8501" target="_blank" class="btn btn-primary" id="launch-app-btn">
+        <a href="http://localhost:8501" data-app-link class="btn btn-primary" id="launch-app-btn">
           <span>🚀 Lancer le Radar</span>
         </a>
       </div>
@@ -790,8 +797,8 @@
         </p>
         <div class="hero-cta">
           <!-- Main Action: Launch Streamlit -->
-          <a href="http://localhost:8501" target="_blank" class="btn btn-primary btn-lg">
-            <span>🚀 Découvrir le Radar en direct (Streamlit)</span>
+          <a href="http://localhost:8501" data-app-link class="btn btn-primary btn-lg">
+            <span>🚀 Ouvrir le Radar</span>
           </a>
           <a href="#probleme" class="btn btn-outline btn-lg">
             <span>Comprendre le problème</span>
@@ -807,7 +814,7 @@
       <div class="mockup-preview">
         <div class="mockup-card">
           <div class="mockup-header">
-            <span class="mockup-tag-new">✨ NOUVEAU SIGNAL DÉTECTÉ</span>
+            <span class="mockup-tag-new">✨ APERÇU ILLUSTRATIF</span>
             <div class="mockup-score-box">
               <span class="mockup-score-num">88</span>
               <span class="mockup-score-max">/ 100</span>
@@ -841,6 +848,7 @@
             </div>
             <div class="bar-fill"><div class="bar-value" style="width: 86%;"></div></div>
           </div>
+          <div class="mockup-note">Exemple d'interface : les données de cette carte sont illustratives.</div>
         </div>
       </div>
     </div>
@@ -975,8 +983,8 @@
         <h2>Prêt à changer d'échelle sur la commande publique ?</h2>
         <p>Lancez le Radar Cap Marchés et découvrez immédiatement les projets d'achats publics qualifiés pour votre entreprise.</p>
         <div class="btn-group">
-          <a href="http://localhost:8501" target="_blank" class="btn btn-primary btn-lg">
-            <span>🚀 Lancer l'Application Streamlit</span>
+          <a href="http://localhost:8501" data-app-link class="btn btn-primary btn-lg">
+            <span>🚀 Ouvrir l'interface</span>
           </a>
           <a href="https://github.com/BRIKIAchraf/cap-marches" target="_blank" class="btn btn-outline btn-lg">
             <span>⭐ Voir sur GitHub</span>
@@ -999,15 +1007,41 @@
   </footer>
 
   <script>
-    // Détection de l'état de l'application locale
-    const launchBtn = document.getElementById('launch-app-btn');
-    fetch('http://localhost:8501/_stcore/health', { mode: 'no-cors' })
-      .then(() => {
-        console.log('Streamlit est actif sur le port 8501');
-      })
-      .catch(() => {
-        console.log('Streamlit en attente de démarrage (./start.ps1)');
+    // Le lien peut être configuré sans modifier la page : index.html?app=https://radar.example.com
+    // ou via l'attribut data-app-url du <body>. Le fallback local reste compatible avec start.ps1.
+    (() => {
+      const queryAppUrl = new URLSearchParams(window.location.search).get('app');
+      const configuredAppUrl = document.body.dataset.appUrl || queryAppUrl;
+      const localHost = ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+      const fallbackAppUrl = localHost && window.location.hostname
+        ? `${window.location.protocol}//${window.location.hostname}:8501`
+        : 'http://localhost:8501';
+      const safeAppUrl = (candidate) => {
+        try {
+          const parsed = new URL(candidate, window.location.href);
+          if (!['http:', 'https:'].includes(parsed.protocol)) return null;
+          return parsed.href.replace(/\/+$/, '');
+        } catch {
+          return null;
+        }
+      };
+      const appUrl = safeAppUrl(configuredAppUrl || fallbackAppUrl) || fallbackAppUrl;
+
+      document.querySelectorAll('[data-app-link]').forEach((link) => {
+        link.href = appUrl;
+        link.removeAttribute('target');
+        link.setAttribute('aria-label', 'Ouvrir l’interface Cap Marchés');
       });
+
+      const status = document.querySelector('.live-status span:last-child');
+      fetch(`${appUrl}/_stcore/health`, { mode: 'no-cors' })
+        .then(() => {
+          if (status) status.textContent = 'Interface prête · données officielles visibles dans le Radar';
+        })
+        .catch(() => {
+          if (status) status.textContent = 'Interface disponible après le démarrage de Streamlit';
+        });
+    })();
   </script>
 </body>
 </html>

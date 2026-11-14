@@ -55,6 +55,12 @@ Sous Windows :
 .\start.ps1
 ```
 
+La landing page autonome est disponible dans `index.html`. Ouvrez-la dans un
+navigateur après avoir démarré Streamlit : chaque bouton « Ouvrir le Radar »
+redirige vers l'interface de la solution. Par défaut, la cible est
+`http://localhost:8501`. Pour une autre URL, utilisez par exemple
+`index.html?app=https://radar.example.com`.
+
 Installation manuelle :
 
 ```powershell
