@@ -18,7 +18,10 @@ hero(
     "Décrivez votre offre une fois. Le moteur sémantique et l'agent réutiliseront ce profil pour cibler, classer et expliquer les opportunités.",
     "Mémoire d'entreprise",
     [
-        ("Profil enregistré" if profile else "Profil à compléter", "ok" if profile else "demo"),
+        (
+            "Profil enregistré" if profile else "Profil à compléter",
+            "ok" if profile else "demo",
+        ),
         ("Stockage local sécurisé", "ok"),
         ("Aucun secret dans ce profil", "ok"),
     ],
@@ -101,8 +104,12 @@ if submitted:
 
 section("Bon profil, meilleurs résultats")
 first, second, third = st.columns(3)
-first.info("**Décrivez les résultats livrés**\n\nPréférez « migration SIRH et formation » à « informatique ».")
+first.info(
+    "**Décrivez les résultats livrés**\n\nPréférez « migration SIRH et formation » à « informatique »."
+)
 second.info("**Ciblez vos territoires**\n\nSéparez les départements par des virgules.")
-third.info("**Restez non sensible**\n\nNe saisissez ni clé API, ni mot de passe, ni donnée personnelle.")
+third.info(
+    "**Restez non sensible**\n\nNe saisissez ni clé API, ni mot de passe, ni donnée personnelle."
+)
 
 render_footer()

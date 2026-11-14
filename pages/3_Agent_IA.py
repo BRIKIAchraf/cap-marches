@@ -26,8 +26,14 @@ hero(
     "Il transforme votre profil en plan de recherche, consulte les trois jeux publics, confronte l'historique et conserve les preuves de chaque recommandation.",
     "Agent commercial contrôlé",
     [
-        ("Profil disponible" if profile else "Profil requis", "ok" if profile else "demo"),
-        ("Hémicycle connecté" if hemicycle.is_configured() else "Mode démonstration", "ok" if hemicycle.is_configured() else "demo"),
+        (
+            "Profil disponible" if profile else "Profil requis",
+            "ok" if profile else "demo",
+        ),
+        (
+            "Hémicycle connecté" if hemicycle.is_configured() else "Mode démonstration",
+            "ok" if hemicycle.is_configured() else "demo",
+        ),
         ("Réponse sourcée", "ok"),
     ],
 )
@@ -172,17 +178,19 @@ with tab_plan:
 
 with tab_proof:
     st.markdown("#### Dossier transmis au modèle de langage")
-    st.caption(
-        "Ces données publiques sont le seul contexte autorisé pour la synthèse."
-    )
+    st.caption("Ces données publiques sont le seul contexte autorisé pour la synthèse.")
     st.json(result["evidence"], expanded=True)
 
 with tab_answer:
     has_llm = llm.is_configured()
     if has_llm:
-        st.caption("La réponse sera générée via Featherless à partir du dossier de preuves uniquement.")
+        st.caption(
+            "La réponse sera générée via Featherless à partir du dossier de preuves uniquement."
+        )
     else:
-        st.caption("Synthèse factuelle certifiée sans hallucination (Ajoutez `FEATHERLESS_API_KEY` dans `.env` pour l'analyse générative).")
+        st.caption(
+            "Synthèse factuelle certifiée sans hallucination (Ajoutez `FEATHERLESS_API_KEY` dans `.env` pour l'analyse générative)."
+        )
     if st.button(
         "Produire la recommandation sourcée",
         type="primary",

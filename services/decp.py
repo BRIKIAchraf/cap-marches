@@ -55,9 +55,7 @@ def fetch_contracts(
             BASE_URL,
             params=params,
             timeout=timeout,
-            headers={
-                "User-Agent": f"CapMarchesHackathon/1.0 (contact: {contact})"
-            },
+            headers={"User-Agent": f"CapMarchesHackathon/1.0 (contact: {contact})"},
         )
         response.raise_for_status()
         payload = response.json()
@@ -68,4 +66,3 @@ def fetch_contracts(
     if not isinstance(results, list):
         raise DecpError("Réponse DECP inattendue : champ `results` absent.")
     return results
-

@@ -458,7 +458,9 @@ CSS = """
 
 
 def setup_page(title: str, icon: str = "🎯") -> None:
-    st.set_page_config(page_title=f"{title} · Cap Marchés", page_icon=icon, layout="wide")
+    st.set_page_config(
+        page_title=f"{title} · Cap Marchés", page_icon=icon, layout="wide"
+    )
     st.markdown(CSS, unsafe_allow_html=True)
 
 
@@ -510,10 +512,14 @@ def hero(
 ) -> None:
     rendered = ""
     if pills:
-        rendered = '<div class="cm-pills">' + "".join(
-            f'<span class="cm-pill"><span class="cm-dot {escape(kind)}"></span>{escape(label)}</span>'
-            for label, kind in pills
-        ) + "</div>"
+        rendered = (
+            '<div class="cm-pills">'
+            + "".join(
+                f'<span class="cm-pill"><span class="cm-dot {escape(kind)}"></span>{escape(label)}</span>'
+                for label, kind in pills
+            )
+            + "</div>"
+        )
     st.markdown(
         f"""
         <section class="cm-hero">

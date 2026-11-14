@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from dotenv import load_dotenv
+
 load_dotenv(ROOT / ".env")
 
 import storage
@@ -26,10 +27,14 @@ def main():
 
     searches = storage.list_saved_searches()
     active_alerts = [s for s in searches if s.get("alerts_enabled")]
-    print(f"Recherches sauvegardées : {len(searches)} (dont {len(active_alerts)} avec alertes activées)")
+    print(
+        f"Recherches sauvegardées : {len(searches)} (dont {len(active_alerts)} avec alertes activées)"
+    )
 
     if not active_alerts:
-        print("Aucune alerte active configurée. Activez des veilles depuis l'interface.")
+        print(
+            "Aucune alerte active configurée. Activez des veilles depuis l'interface."
+        )
         return
 
     results = run_all_alerts(force_all=False)
@@ -41,7 +46,9 @@ def main():
 
     stats = storage.seen_stats()
     print("\n" + "-" * 60)
-    print(f"Bilan base locale : {stats['seen_total']} marchés indexés | {stats['sirene_cached']} acheteurs en cache Sirene")
+    print(
+        f"Bilan base locale : {stats['seen_total']} marchés indexés | {stats['sirene_cached']} acheteurs en cache Sirene"
+    )
     print("=" * 60)
 
 

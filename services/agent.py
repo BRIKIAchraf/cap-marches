@@ -30,7 +30,9 @@ class AgentPlan:
 
 def build_plan(profile: dict[str, Any], question: str = "") -> AgentPlan:
     query = " ".join(
-        part for part in (profile.get("offer", ""), profile.get("keywords", ""), question) if part
+        part
+        for part in (profile.get("offer", ""), profile.get("keywords", ""), question)
+        if part
     ).strip()
     if not query:
         raise ValueError("Le profil doit décrire une offre ou des mots-clés.")
@@ -44,20 +46,29 @@ def build_plan(profile: dict[str, Any], question: str = "") -> AgentPlan:
 
 
 def _project_text(row: dict[str, Any]) -> str:
-    return " ".join(str(row.get(key, "") or "") for key in ("libelle", "description", "code_s_cpv", "categorie_d_achat"))
+    return " ".join(
+        str(row.get(key, "") or "")
+        for key in ("libelle", "description", "code_s_cpv", "categorie_d_achat")
+    )
 
 
 def _contract_text(row: dict[str, Any]) -> str:
-    return " ".join(str(row.get(key, "") or "") for key in ("objet", "codecpv", "nature"))
+    return " ".join(
+        str(row.get(key, "") or "") for key in ("objet", "codecpv", "nature")
+    )
 
 
 def run_agent(
     profile: dict[str, Any],
     question: str = "",
     *,
-    project_fetcher: Callable[..., list[dict[str, Any]]] = hemicycle.fetch_upcoming_projects,
+    project_fetcher: Callable[
+        ..., list[dict[str, Any]]
+    ] = hemicycle.fetch_upcoming_projects,
     contract_fetcher: Callable[..., list[dict[str, Any]]] = hemicycle.fetch_contracts,
-    organization_fetcher: Callable[..., list[dict[str, Any]]] = hemicycle.fetch_organizations,
+    organization_fetcher: Callable[
+        ..., list[dict[str, Any]]
+    ] = hemicycle.fetch_organizations,
     limit: int | None = None,
 ) -> dict[str, Any]:
     """Exécute une veille bornée et retourne résultats, preuves et trace du plan."""
@@ -71,7 +82,9 @@ def run_agent(
         category=plan.category,
         limit=bounded_limit,
     )
-    project_semantics = semantic_scores(plan.query, [_project_text(row) for row in projects])
+    project_semantics = semantic_scores(
+        plan.query, [_project_text(row) for row in projects]
+    )
     project_frame = score_projects(
         projects,
         keyword=plan.query,
@@ -87,7 +100,9 @@ def run_agent(
         contracts = contract_fetcher(
             plan.query, department=plan.department, limit=bounded_limit
         )
-        contract_semantics = semantic_scores(plan.query, [_contract_text(row) for row in contracts])
+        contract_semantics = semantic_scores(
+            plan.query, [_contract_text(row) for row in contracts]
+        )
         contract_frame = score_contracts(
             contracts,
             keyword=plan.query,
@@ -99,7 +114,9 @@ def run_agent(
 
     buyer_ids = []
     if not project_frame.empty:
-        buyer_ids.extend(project_frame["siren_de_l_entite_acheteuse"].dropna().astype(str).tolist())
+        buyer_ids.extend(
+            project_frame["siren_de_l_entite_acheteuse"].dropna().astype(str).tolist()
+        )
     organizations = (
         organization_fetcher(buyer_ids[:100], identifier_type="siren", limit=100)
         if plan.enrich_buyers and buyer_ids

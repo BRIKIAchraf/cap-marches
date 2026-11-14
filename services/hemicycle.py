@@ -194,7 +194,9 @@ def fetch_organizations(
     if column not in {"siren", "siret"}:
         raise ValueError("identifier_type doit valoir 'siren' ou 'siret'.")
 
-    all_ids = list(dict.fromkeys(str(value).strip() for value in identifiers if str(value).strip()))
+    all_ids = list(
+        dict.fromkeys(str(value).strip() for value in identifiers if str(value).strip())
+    )
     if not all_ids:
         return []
 
@@ -203,6 +205,7 @@ def fetch_organizations(
     if use_cache:
         try:
             import storage
+
             cached_map = storage.get_cached_organizations(all_ids, column)
         except Exception:
             cached_map = {}
@@ -210,9 +213,7 @@ def fetch_organizations(
     # Identifiants manquants qui doivent être interrogés via l'API
     missing_ids = [val for val in all_ids if val not in cached_map]
 
-    maximum_identifiers = max(
-        1, min(int(os.getenv("MAX_SIRENE_ENRICHMENTS", "5")), 20)
-    )
+    maximum_identifiers = max(1, min(int(os.getenv("MAX_SIRENE_ENRICHMENTS", "5")), 20))
     to_fetch = missing_ids[:maximum_identifiers]
 
     # Le jeu Sirene accepte uniquement `eq` sur SIREN/SIRET, pas `in`.
@@ -227,9 +228,7 @@ def fetch_organizations(
         ]
         if column == "siren":
             filters.append({"colonne": "siege", "op": "eq", "valeur": True})
-        filters.append(
-            {"colonne": "etat_administratif", "op": "eq", "valeur": "A"}
-        )
+        filters.append({"colonne": "etat_administratif", "op": "eq", "valeur": "A"})
         try:
             new_results = query_dataset(
                 SIRENE_DATASET,
@@ -246,6 +245,7 @@ def fetch_organizations(
     if rows and use_cache:
         try:
             import storage
+
             storage.cache_organizations(rows, column)
         except Exception:
             pass

@@ -37,7 +37,9 @@ def format_digest_markdown(
         title = opp.get("libelle") if is_future else opp.get("objet")
         buyer = opp.get("denomination_acheteur") or "Acheteur public"
         score = int(opp.get("score", 0))
-        budget = opp.get("montant_estime_du_marche") if is_future else opp.get("montant")
+        budget = (
+            opp.get("montant_estime_du_marche") if is_future else opp.get("montant")
+        )
         budget_str = f"Budget : {budget}" if budget else "Budget non renseigné"
         lines.append(f"**{idx}. [{score}/100]** {title}")
         lines.append(f"   🏢 {buyer} | 💶 {budget_str}")
@@ -156,10 +158,14 @@ def run_single_search(search: dict[str, Any]) -> dict[str, Any]:
     # 3. Enrichissement Sirene avec le cache local
     id_key = "siren_de_l_entite_acheteuse" if analysis == "future" else "acheteur_id"
     id_type = "siren" if analysis == "future" else "siret"
-    buyer_ids = [str(r.get(id_key, "")).strip() for r in scored_records if r.get(id_key)]
+    buyer_ids = [
+        str(r.get(id_key, "")).strip() for r in scored_records if r.get(id_key)
+    ]
     if buyer_ids and hemicycle.is_configured():
         try:
-            orgs = hemicycle.fetch_organizations(buyer_ids[:20], identifier_type=id_type)
+            orgs = hemicycle.fetch_organizations(
+                buyer_ids[:20], identifier_type=id_type
+            )
             org_map = {str(o.get(id_type)): o for o in orgs if o.get(id_type)}
             for r in scored_records:
                 match = org_map.get(str(r.get(id_key)))
@@ -191,7 +197,10 @@ def run_single_search(search: dict[str, Any]) -> dict[str, Any]:
         details={
             "total_analyzed": len(scored_records),
             "new_count": len(new_records),
-            "top_opportunity": new_records[0].get("libelle") or new_records[0].get("objet") if new_records else None,
+            "top_opportunity": new_records[0].get("libelle")
+            or new_records[0].get("objet")
+            if new_records
+            else None,
         },
     )
 

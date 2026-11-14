@@ -124,9 +124,13 @@ def parse_amount_range(value: Any) -> tuple[float | None, float | None]:
 
     numbers = [convert(number, unit) for number, unit in matches]
     if len(numbers) == 1:
-        return (numbers[0], float("inf")) if text.startswith("+") else (
-            numbers[0],
-            numbers[0],
+        return (
+            (numbers[0], float("inf"))
+            if text.startswith("+")
+            else (
+                numbers[0],
+                numbers[0],
+            )
         )
     return min(numbers[0], numbers[1]), max(numbers[0], numbers[1])
 
@@ -190,15 +194,15 @@ def score_projects(
     frame["score_mots"] = combined_text.map(
         lambda value: keyword_points(value, keyword)
     )
-    frame["score_territoire"] = frame[
-        "departement_s_d_execution_du_marche"
-    ].map(lambda value: location_points(value, location))
+    frame["score_territoire"] = frame["departement_s_d_execution_du_marche"].map(
+        lambda value: location_points(value, location)
+    )
     frame["score_montant"] = frame["montant_estime_du_marche"].map(
         lambda value: estimated_amount_points(value, minimum, maximum)
     )
-    frame["score_calendrier"] = frame[
-        "date_previsionnelle_de_publication"
-    ].map(lambda value: publication_points(value, today))
+    frame["score_calendrier"] = frame["date_previsionnelle_de_publication"].map(
+        lambda value: publication_points(value, today)
+    )
     if semantic_scores is None:
         frame["score_semantique"] = 0
         frame["score"] = frame[
@@ -207,17 +211,25 @@ def score_projects(
     else:
         values = list(semantic_scores)
         if len(values) != len(frame):
-            raise ValueError("Le nombre de scores sémantiques doit correspondre aux lignes.")
-        frame["score_semantique"] = [round(max(0.0, min(1.0, value)) * 35) for value in values]
+            raise ValueError(
+                "Le nombre de scores sémantiques doit correspondre aux lignes."
+            )
+        frame["score_semantique"] = [
+            round(max(0.0, min(1.0, value)) * 35) for value in values
+        ]
         # Score hybride sur 100 : sens 35, mots 15, territoire 15,
         # montant 15, calendrier 20. Les composantes brutes restent visibles.
         frame["score"] = (
-            frame["score_semantique"]
-            + (frame["score_mots"] * 0.5).round()
-            + (frame["score_territoire"] * 0.75).round()
-            + (frame["score_montant"] * 0.75).round()
-            + (frame["score_calendrier"] * (2 / 3)).round()
-        ).clip(0, 100).astype(int)
+            (
+                frame["score_semantique"]
+                + (frame["score_mots"] * 0.5).round()
+                + (frame["score_territoire"] * 0.75).round()
+                + (frame["score_montant"] * 0.75).round()
+                + (frame["score_calendrier"] * (2 / 3)).round()
+            )
+            .clip(0, 100)
+            .astype(int)
+        )
     return frame.sort_values(
         ["score", "date_previsionnelle_de_publication"],
         ascending=[False, True],
@@ -298,16 +310,23 @@ def score_contracts(
     else:
         values = list(semantic_scores)
         if len(values) != len(frame):
-            raise ValueError("Le nombre de scores sémantiques doit correspondre aux lignes.")
-        frame["score_semantique"] = [round(max(0.0, min(1.0, value)) * 35) for value in values]
+            raise ValueError(
+                "Le nombre de scores sémantiques doit correspondre aux lignes."
+            )
+        frame["score_semantique"] = [
+            round(max(0.0, min(1.0, value)) * 35) for value in values
+        ]
         frame["score"] = (
-            frame["score_semantique"]
-            + (frame["score_mots"] * 0.5).round()
-            + (frame["score_territoire"] * 0.75).round()
-            + (frame["score_montant"] * 0.75).round()
-            + (frame["score_renouvellement"] * (2 / 3)).round()
-        ).clip(0, 100).astype(int)
+            (
+                frame["score_semantique"]
+                + (frame["score_mots"] * 0.5).round()
+                + (frame["score_territoire"] * 0.75).round()
+                + (frame["score_montant"] * 0.75).round()
+                + (frame["score_renouvellement"] * (2 / 3)).round()
+            )
+            .clip(0, 100)
+            .astype(int)
+        )
     return frame.sort_values(
         ["score", "montant"], ascending=[False, False], na_position="last"
     ).reset_index(drop=True)
-

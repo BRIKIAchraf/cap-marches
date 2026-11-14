@@ -30,39 +30,53 @@ def build_heuristic_brief(records: list[dict[str, Any]], company_offer: str) -> 
         title = r.get("libelle") or r.get("objet") or "Marché sans titre"
         buyer = r.get("denomination_acheteur") or "Acheteur public"
         budget = r.get("montant_estime_du_marche") or r.get("montant")
-        budget_str = f"{budget} €" if isinstance(budget, (int, float)) else (str(budget) if budget else "Non précisé")
+        budget_str = (
+            f"{budget} €"
+            if isinstance(budget, (int, float))
+            else (str(budget) if budget else "Non précisé")
+        )
         score = r.get("score", 0)
         lines.append(f"- **Opportunité {idx} (Score {int(score)}/100)** : {title}")
-        lines.append(f"  - **Acheteur** : {buyer} ({r.get('commune_acheteur') or r.get('departement_s_d_execution_du_marche') or 'Territoire national'})")
+        lines.append(
+            f"  - **Acheteur** : {buyer} ({r.get('commune_acheteur') or r.get('departement_s_d_execution_du_marche') or 'Territoire national'})"
+        )
         lines.append(f"  - **Budget estimé / Montant** : {budget_str}")
         if r.get("date_previsionnelle_de_publication"):
-            lines.append(f"  - **Date prévisionnelle** : {str(r.get('date_previsionnelle_de_publication'))[:10]}")
+            lines.append(
+                f"  - **Date prévisionnelle** : {str(r.get('date_previsionnelle_de_publication'))[:10]}"
+            )
         elif r.get("date_fin_estimee"):
-            lines.append(f"  - **Échéance actuelle du contrat** : {str(r.get('date_fin_estimee'))[:10]}")
+            lines.append(
+                f"  - **Échéance actuelle du contrat** : {str(r.get('date_fin_estimee'))[:10]}"
+            )
 
-    lines.extend([
-        "",
-        "#### 2. Pourquoi ce positionnement est stratégique",
-        "- **Anticipation** : La détection en amont permet de contacter la direction des achats avant la publication du CCTP définitif.",
-        "- **Pertinence de l'offre** : Les besoins exprimés correspondent aux fonctionnalités clés de votre solution.",
-        "- **Solvabilité publique** : Budget validé dans la programmation ou reconduction d'un marché existant.",
-        "",
-        "#### 3. Prochaines actions recommandées",
-        "1. **Cartographier l'acheteur** : Identifier le responsable du service prescripteur (DSI, DRH ou Direction des Achats).",
-        "2. **Prendre un contact informel d'information** : Présenter les innovations récentes du marché sous l'angle du sourçage officiel (autorisé par l'article R2111-1 du Code de la commande publique).",
-        "3. **Planifier une alerte** : Surveiller la parution effective sur les profils d'acheteurs d'ici l'échéance.",
-        "",
-        "#### 4. Limites & Vigilances",
-        "- Les dates prévisionnelles issues d'APProch sont indicatives et restent sujettes à arbitrage budgétaire.",
-        "- Tout contact préalable avec l'acheteur doit respecter le principe d'égalité de traitement des candidats.",
-        "",
-        "---",
-        "*💡 Note : Synthèse factuelle générée automatiquement depuis les preuves publiques. Ajoutez `FEATHERLESS_API_KEY` dans `.env` pour activer la réécriture narrative via LLM.*",
-    ])
+    lines.extend(
+        [
+            "",
+            "#### 2. Pourquoi ce positionnement est stratégique",
+            "- **Anticipation** : La détection en amont permet de contacter la direction des achats avant la publication du CCTP définitif.",
+            "- **Pertinence de l'offre** : Les besoins exprimés correspondent aux fonctionnalités clés de votre solution.",
+            "- **Solvabilité publique** : Budget validé dans la programmation ou reconduction d'un marché existant.",
+            "",
+            "#### 3. Prochaines actions recommandées",
+            "1. **Cartographier l'acheteur** : Identifier le responsable du service prescripteur (DSI, DRH ou Direction des Achats).",
+            "2. **Prendre un contact informel d'information** : Présenter les innovations récentes du marché sous l'angle du sourçage officiel (autorisé par l'article R2111-1 du Code de la commande publique).",
+            "3. **Planifier une alerte** : Surveiller la parution effective sur les profils d'acheteurs d'ici l'échéance.",
+            "",
+            "#### 4. Limites & Vigilances",
+            "- Les dates prévisionnelles issues d'APProch sont indicatives et restent sujettes à arbitrage budgétaire.",
+            "- Tout contact préalable avec l'acheteur doit respecter le principe d'égalité de traitement des candidats.",
+            "",
+            "---",
+            "*💡 Note : Synthèse factuelle générée automatiquement depuis les preuves publiques. Ajoutez `FEATHERLESS_API_KEY` dans `.env` pour activer la réécriture narrative via LLM.*",
+        ]
+    )
     return "\n".join(lines)
 
 
-def answer_from_evidence_heuristic(question: str, evidence: list[dict[str, Any]]) -> str:
+def answer_from_evidence_heuristic(
+    question: str, evidence: list[dict[str, Any]]
+) -> str:
     """Répond factuellement à la question de l'agent sans modèle externe."""
     if not evidence:
         return "Aucune preuve structurée disponible pour répondre à cette question."
@@ -88,17 +102,19 @@ def answer_from_evidence_heuristic(question: str, evidence: list[dict[str, Any]]
                 lines.append(f"  - *{k.replace('_', ' ').capitalize()}* : {v}")
         lines.append("")
 
-    lines.extend([
-        "#### 3. Recommandations opérationnelles",
-        "- **Prioriser les projets à parution proche** (J-90) pour engager une démarche de sourçage réglementaire.",
-        "- **Consulter les pièces du marché précédent** si disponible pour anticiper les critères de sélection (prix vs valeur technique).",
-        "",
-        "#### 4. Limites d'interprétation",
-        "- Les informations ci-dessus reflètent fidèlement les données ouvertes de l'administration et ne constituent pas un engagement contractuel de l'acheteur.",
-        "",
-        "---",
-        "*💡 Analyse certifiée sans hallucination. Pour une analyse générative personnalisée, renseignez `FEATHERLESS_API_KEY` dans `.env`.*",
-    ])
+    lines.extend(
+        [
+            "#### 3. Recommandations opérationnelles",
+            "- **Prioriser les projets à parution proche** (J-90) pour engager une démarche de sourçage réglementaire.",
+            "- **Consulter les pièces du marché précédent** si disponible pour anticiper les critères de sélection (prix vs valeur technique).",
+            "",
+            "#### 4. Limites d'interprétation",
+            "- Les informations ci-dessus reflètent fidèlement les données ouvertes de l'administration et ne constituent pas un engagement contractuel de l'acheteur.",
+            "",
+            "---",
+            "*💡 Analyse certifiée sans hallucination. Pour une analyse générative personnalisée, renseignez `FEATHERLESS_API_KEY` dans `.env`.*",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -200,7 +216,9 @@ def answer_from_evidence(
         from openai import OpenAI
     except ImportError as exc:  # pragma: no cover
         raise LlmError("Le paquet `openai` n'est pas installé.") from exc
-    safe_evidence = json.loads(json.dumps(evidence[:10], ensure_ascii=False, default=str))
+    safe_evidence = json.loads(
+        json.dumps(evidence[:10], ensure_ascii=False, default=str)
+    )
     client = OpenAI(api_key=api_key, base_url="https://api.featherless.ai/v1")
     try:
         response = client.chat.completions.create(
@@ -232,4 +250,3 @@ def answer_from_evidence(
     if not content:
         raise LlmError("Featherless a renvoyé une réponse vide.")
     return content
-

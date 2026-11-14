@@ -43,7 +43,9 @@ class AgentTests(unittest.TestCase):
             organization_fetcher=lambda *a, **k: [],
         )
         self.assertEqual(result["projects"][0]["code"], "P1")
-        self.assertEqual(result["evidence"][0]["source_dataset"], "projets_achats_publics")
+        self.assertEqual(
+            result["evidence"][0]["source_dataset"], "projets_achats_publics"
+        )
 
 
 if __name__ == "__main__":

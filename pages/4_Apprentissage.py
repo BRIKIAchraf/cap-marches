@@ -26,7 +26,10 @@ hero(
     "Boucle de progrès",
     [
         (f"{status['labels']} retours collectés", "ok" if status["labels"] else "demo"),
-        (f"Objectif {status['minimum']} labels", "demo" if not status["ready"] else "ok"),
+        (
+            f"Objectif {status['minimum']} labels",
+            "demo" if not status["ready"] else "ok",
+        ),
         ("Activation manuelle uniquement", "ok"),
     ],
 )
@@ -48,7 +51,10 @@ chart_col, guidance_col = st.columns([1.1, 0.9])
 with chart_col:
     if counts:
         chart_data = pd.DataFrame(
-            [{"décision": label.replace("_", " "), "volume": count} for label, count in counts.items()]
+            [
+                {"décision": label.replace("_", " "), "volume": count}
+                for label, count in counts.items()
+            ]
         )
         figure = px.bar(
             chart_data,
@@ -77,7 +83,10 @@ with guidance_col:
     st.write("✓ Modèle produit comme candidat")
     st.write("✓ Validation humaine avant activation")
 
-section("Version candidate", "L'entraînement ne modifie jamais automatiquement le classement en production.")
+section(
+    "Version candidate",
+    "L'entraînement ne modifie jamais automatiquement le classement en production.",
+)
 if not status["ready"]:
     remaining = max(status["minimum"] - status["labels"], 0)
     st.warning(
@@ -97,7 +106,10 @@ else:
         except ValueError as exc:
             st.error(str(exc))
 
-section("État du patrimoine de données local", "Mémoire persistante des marchés et des organisations.")
+section(
+    "État du patrimoine de données local",
+    "Mémoire persistante des marchés et des organisations.",
+)
 stats = storage.seen_stats()
 col_s1, col_s2, col_s3 = st.columns(3)
 col_s1.metric("Marchés & projets indexés", stats["seen_total"])

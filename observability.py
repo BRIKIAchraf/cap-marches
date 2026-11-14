@@ -45,4 +45,3 @@ def traced(operation: str) -> Iterator[str]:
             operation=operation,
             duration_ms=round((time.perf_counter() - started) * 1000),
         )
-

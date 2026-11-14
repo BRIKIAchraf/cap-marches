@@ -13,7 +13,12 @@ import streamlit as st
 from dotenv import load_dotenv
 
 import storage
-from scoring import DISPLAY_COLUMNS, PROJECT_DISPLAY_COLUMNS, score_contracts, score_projects
+from scoring import (
+    DISPLAY_COLUMNS,
+    PROJECT_DISPLAY_COLUMNS,
+    score_contracts,
+    score_projects,
+)
 from services import alerts, decp, hemicycle, llm
 from services.evidence import contract_evidence, project_evidence
 from services.semantic import semantic_scores
@@ -193,10 +198,12 @@ def perform_analysis(config: dict[str, Any]) -> dict[str, Any]:
             frame, organizations, identifier_type=identifier_type
         )
     else:
-        frame = enrich_with_organizations(
-            frame, [], identifier_type=identifier_type
-        )
-    dataset = "projets_achats_publics" if config["analysis"] == "future" else "marches_publics"
+        frame = enrich_with_organizations(frame, [], identifier_type=identifier_type)
+    dataset = (
+        "projets_achats_publics"
+        if config["analysis"] == "future"
+        else "marches_publics"
+    )
     if not frame.empty:
         try:
             records_list = frame.to_dict(orient="records")
@@ -288,7 +295,9 @@ hero(
             "ok" if hemicycle.is_configured() else "demo",
         ),
         (
-            "Featherless connecté" if llm.is_configured() else "Synthèse IA facultative",
+            "Featherless connecté"
+            if llm.is_configured()
+            else "Synthèse IA facultative",
             "ok" if llm.is_configured() else "demo",
         ),
         ("Score explicable", "ok"),
@@ -322,7 +331,10 @@ result = st.session_state.get("analysis_result")
 if not result:
     saved = storage.list_saved_searches()
     if saved:
-        section("Reprendre une veille sauvegardée", "Les résultats seront recalculés depuis les sources officielles au moment du chargement.")
+        section(
+            "Reprendre une veille sauvegardée",
+            "Les résultats seront recalculés depuis les sources officielles au moment du chargement.",
+        )
         selected_saved = st.selectbox(
             "Veille enregistrée",
             range(len(saved)),
@@ -372,9 +384,9 @@ metric_new.metric("✨ Nouveaux signaux", new_count)
 if is_future:
     horizon = pd.Timestamp(date.today() + timedelta(days=90))
     upcoming = int(
-        frame["date_previsionnelle_de_publication"].between(
-            pd.Timestamp(date.today()), horizon
-        ).sum()
+        frame["date_previsionnelle_de_publication"]
+        .between(pd.Timestamp(date.today()), horizon)
+        .sum()
     )
     metric2.metric("Sous 90 jours", upcoming)
 else:
@@ -391,7 +403,8 @@ section(
     "Sélectionnez une ligne pour comprendre son score, consulter ses preuves et décider de la suite.",
 )
 labels = [
-    selected_label(row, index, active["analysis"]) for index, (_, row) in enumerate(frame.head(30).iterrows())
+    selected_label(row, index, active["analysis"])
+    for index, (_, row) in enumerate(frame.head(30).iterrows())
 ]
 selected_index = st.selectbox(
     "Opportunité ouverte",
@@ -478,9 +491,7 @@ with tab_list:
         "departement_s_d_execution_du_marche" if is_future else "lieuexecution_code"
     )
     chart = (
-        frame.assign(
-            territoire=frame[chart_source].fillna("Non renseigné").astype(str)
-        )
+        frame.assign(territoire=frame[chart_source].fillna("Non renseigné").astype(str))
         .groupby("territoire", as_index=False)
         .agg(opportunites=("score", "count"), score_moyen=("score", "mean"))
         .sort_values("opportunites", ascending=False)
@@ -519,9 +530,7 @@ with tab_analysis:
     st.caption(f"{buyer} · {locality or 'Territoire non renseigné'}")
     score_columns = st.columns(5)
     score_columns[0].metric("Score global", f"{int(selected['score'])}/100")
-    score_columns[1].metric(
-        "Sens", f"{int(selected.get('score_semantique', 0))}/35"
-    )
+    score_columns[1].metric("Sens", f"{int(selected.get('score_semantique', 0))}/35")
     score_columns[2].metric("Mots", f"{int(selected.get('score_mots', 0))}/30 brut")
     score_columns[3].metric(
         "Territoire", f"{int(selected.get('score_territoire', 0))}/20 brut"
@@ -604,7 +613,9 @@ with tab_actions:
                 "projets_achats_publics" if is_future else "marches_publics",
                 record,
             )
-            st.success("Décision enregistrée. Elle alimentera la boucle d'apprentissage.")
+            st.success(
+                "Décision enregistrée. Elle alimentera la boucle d'apprentissage."
+            )
     with watch_col:
         st.markdown("#### Sauvegarder la veille")
         with st.form("watch-form"):
@@ -617,17 +628,25 @@ with tab_actions:
                 value=True,
                 help="L'agent de fond surveillera les marchés et ne notifiera que les signaux inédits.",
             )
-            watch_submit = st.form_submit_button("Sauvegarder la veille", type="primary")
+            watch_submit = st.form_submit_button(
+                "Sauvegarder la veille", type="primary"
+            )
         if watch_submit:
             storage.save_search(watch_name, active, alert)
             st.success("Veille sauvegardée et planifiée avec succès.")
 
         st.markdown("##### ⚡ Déclencheur d'alerte immédiat")
-        st.caption("Simule l'exécution de l'agent de fond sur cette recherche pour tester la notification.")
+        st.caption(
+            "Simule l'exécution de l'agent de fond sur cette recherche pour tester la notification."
+        )
         if st.button("Tester l'alerte automatique maintenant", width="stretch"):
             with st.spinner("Exécution de la veille et calcul du différentiel…"):
-                alert_res = alerts.run_single_search({"name": f"Veille · {active['keyword']}", "query": active})
-                st.success(f"Alerte exécutée : {alert_res['new_count']} nouveau(x) signal(aux) détecté(s) !")
+                alert_res = alerts.run_single_search(
+                    {"name": f"Veille · {active['keyword']}", "query": active}
+                )
+                st.success(
+                    f"Alerte exécutée : {alert_res['new_count']} nouveau(x) signal(aux) détecté(s) !"
+                )
                 digest_md = alerts.format_digest_markdown(
                     alert_res["search_name"],
                     alert_res.get("new_records", []),
@@ -648,7 +667,11 @@ with tab_actions:
         )
     with ai_col:
         has_key = llm.is_configured()
-        btn_label = "Générer la note commerciale" if has_key else "Générer la note commerciale factuelle"
+        btn_label = (
+            "Générer la note commerciale"
+            if has_key
+            else "Générer la note commerciale factuelle"
+        )
         if st.button(
             btn_label,
             type="primary",

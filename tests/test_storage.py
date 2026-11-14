@@ -26,7 +26,9 @@ class StorageTests(unittest.TestCase):
             }
         )
         self.assertEqual(storage.load_profile()["company_name"], "Demo")
-        storage.record_feedback("P-1", "pertinent", "projets_achats_publics", {"score": 80})
+        storage.record_feedback(
+            "P-1", "pertinent", "projets_achats_publics", {"score": 80}
+        )
         self.assertEqual(storage.feedback_counts(), {"pertinent": 1})
         storage.save_search("RH", {"keyword": "RH"}, True)
         self.assertEqual(storage.list_saved_searches()[0]["name"], "RH")
@@ -47,7 +49,9 @@ class StorageTests(unittest.TestCase):
         first_check = storage.mark_opportunities_seen(records, "projets_achats_publics")
         self.assertEqual(first_check, [True])
 
-        second_check = storage.mark_opportunities_seen(records, "projets_achats_publics")
+        second_check = storage.mark_opportunities_seen(
+            records, "projets_achats_publics"
+        )
         self.assertEqual(second_check, [False])
 
         stats = storage.seen_stats()

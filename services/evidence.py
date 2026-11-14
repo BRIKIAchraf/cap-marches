@@ -54,4 +54,3 @@ def contract_evidence(record: dict[str, Any]) -> dict[str, Any]:
             "renewal": record.get("score_renouvellement", 0),
         },
     }
-

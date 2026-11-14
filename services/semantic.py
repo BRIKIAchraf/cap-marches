@@ -54,9 +54,12 @@ def _tfidf_scores(query: str, documents: list[str]) -> np.ndarray:
         analyzer="char_wb",
         sublinear_tf=True,
     )
+
     def expand(text: str) -> str:
         value = re.sub(r"\brh\b", "ressources humaines", text, flags=re.IGNORECASE)
-        value = re.sub(r"\bsaas\b", "logiciel service cloud", value, flags=re.IGNORECASE)
+        value = re.sub(
+            r"\bsaas\b", "logiciel service cloud", value, flags=re.IGNORECASE
+        )
         return value
 
     corpus = [expand(query), *(expand(document) for document in documents)]
@@ -101,4 +104,3 @@ def semantic_scores(
 
 def semantic_points(scores: Iterable[float], maximum: int = 35) -> list[int]:
     return [round(maximum * max(0.0, min(1.0, float(score)))) for score in scores]
-

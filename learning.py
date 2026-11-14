@@ -30,7 +30,12 @@ def feedback_frame() -> pd.DataFrame:
                 "score_mots": float(payload.get("score_mots", 0) or 0),
                 "score_territoire": float(payload.get("score_territoire", 0) or 0),
                 "score_montant": float(payload.get("score_montant", 0) or 0),
-                "score_temps": float(payload.get("score_calendrier", payload.get("score_renouvellement", 0)) or 0),
+                "score_temps": float(
+                    payload.get(
+                        "score_calendrier", payload.get("score_renouvellement", 0)
+                    )
+                    or 0
+                ),
                 "target": int(row["label"] in POSITIVE_LABELS),
             }
         )
@@ -68,12 +73,20 @@ def train_model(output_path: str | Path = "models/ranker.joblib") -> dict[str, A
     x_train, x_test, y_train, y_test = train_test_split(
         features, target, test_size=0.25, random_state=42, stratify=target
     )
-    model = HistGradientBoostingClassifier(max_iter=150, learning_rate=0.05, random_state=42)
+    model = HistGradientBoostingClassifier(
+        max_iter=150, learning_rate=0.05, random_state=42
+    )
     model.fit(x_train, y_train)
     auc = float(roc_auc_score(y_test, model.predict_proba(x_test)[:, 1]))
     destination = Path(output_path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     dump({"model": model, "features": list(features.columns)}, destination)
-    metadata = {"labels": len(frame), "roc_auc": round(auc, 4), "path": str(destination)}
-    destination.with_suffix(".json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    metadata = {
+        "labels": len(frame),
+        "roc_auc": round(auc, 4),
+        "path": str(destination),
+    }
+    destination.with_suffix(".json").write_text(
+        json.dumps(metadata, indent=2), encoding="utf-8"
+    )
     return metadata

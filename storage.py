@@ -8,7 +8,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Integer, MetaData, String, Table
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    Integer,
+    MetaData,
+    String,
+    Table,
+)
 from sqlalchemy import create_engine, delete, func, insert, select
 
 
@@ -106,7 +116,11 @@ def init_db() -> None:
 def load_profile() -> dict[str, Any] | None:
     init_db()
     with engine.begin() as connection:
-        row = connection.execute(select(profiles).where(profiles.c.id == 1)).mappings().first()
+        row = (
+            connection.execute(select(profiles).where(profiles.c.id == 1))
+            .mappings()
+            .first()
+        )
     return dict(row) if row else None
 
 
@@ -136,7 +150,14 @@ def record_feedback(
     source_dataset: str,
     payload: dict[str, Any],
 ) -> None:
-    allowed = {"pertinent", "non_pertinent", "a_contacter", "contacte", "gagne", "perdu"}
+    allowed = {
+        "pertinent",
+        "non_pertinent",
+        "a_contacter",
+        "contacte",
+        "gagne",
+        "perdu",
+    }
     if label not in allowed:
         raise ValueError(f"Label non autorisé : {label}")
     init_db()
@@ -225,9 +246,15 @@ def cache_organizations(
             identifier = str(org.get(type_col, "")).strip()
             if not identifier:
                 continue
-            denomination = str(org.get("denomination", "") or org.get("denomination_acheteur", "")).strip()
-            commune = str(org.get("commune", "") or org.get("commune_acheteur", "")).strip()
-            activite = str(org.get("activite_principale", "") or org.get("activite_acheteur", "")).strip()
+            denomination = str(
+                org.get("denomination", "") or org.get("denomination_acheteur", "")
+            ).strip()
+            commune = str(
+                org.get("commune", "") or org.get("commune_acheteur", "")
+            ).strip()
+            activite = str(
+                org.get("activite_principale", "") or org.get("activite_acheteur", "")
+            ).strip()
             payload = json.loads(json.dumps(org, ensure_ascii=False, default=str))
 
             connection.execute(
@@ -270,10 +297,18 @@ def mark_opportunities_seen(
     with engine.begin() as connection:
         for record in records:
             key = extract_opportunity_key(record)
-            title = str(record.get("libelle") or record.get("objet") or "Sans titre")[:490]
-            row = connection.execute(
-                select(seen_opportunities).where(seen_opportunities.c.opportunity_key == key)
-            ).mappings().first()
+            title = str(record.get("libelle") or record.get("objet") or "Sans titre")[
+                :490
+            ]
+            row = (
+                connection.execute(
+                    select(seen_opportunities).where(
+                        seen_opportunities.c.opportunity_key == key
+                    )
+                )
+                .mappings()
+                .first()
+            )
             if row is None:
                 connection.execute(
                     insert(seen_opportunities).values(
@@ -287,7 +322,9 @@ def mark_opportunities_seen(
                 results.append(True)
             else:
                 connection.execute(
-                    delete(seen_opportunities).where(seen_opportunities.c.opportunity_key == key)
+                    delete(seen_opportunities).where(
+                        seen_opportunities.c.opportunity_key == key
+                    )
                 )
                 connection.execute(
                     insert(seen_opportunities).values(
@@ -306,8 +343,16 @@ def seen_stats() -> dict[str, int]:
     """Statistiques sur les signaux observés."""
     init_db()
     with engine.begin() as connection:
-        count = connection.execute(select(func.count()).select_from(seen_opportunities)).scalar() or 0
-        cache_count = connection.execute(select(func.count()).select_from(sirene_cache)).scalar() or 0
+        count = (
+            connection.execute(
+                select(func.count()).select_from(seen_opportunities)
+            ).scalar()
+            or 0
+        )
+        cache_count = (
+            connection.execute(select(func.count()).select_from(sirene_cache)).scalar()
+            or 0
+        )
     return {"seen_total": int(count), "sirene_cached": int(cache_count)}
 
 
@@ -336,9 +381,13 @@ def log_alert_run(
 def list_alert_history(limit: int = 10) -> list[dict[str, Any]]:
     init_db()
     with engine.begin() as connection:
-        rows = connection.execute(
-            select(alerts_history).order_by(alerts_history.c.created_at.desc()).limit(limit)
-        ).mappings().all()
+        rows = (
+            connection.execute(
+                select(alerts_history)
+                .order_by(alerts_history.c.created_at.desc())
+                .limit(limit)
+            )
+            .mappings()
+            .all()
+        )
         return [dict(r) for r in rows]
-
-

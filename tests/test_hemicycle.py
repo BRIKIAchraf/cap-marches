@@ -15,7 +15,9 @@ from services.hemicycle import (
 class FakeResponse:
     def __init__(self, rows=None):
         self.status_code = 200
-        self.rows = rows if rows is not None else [{"code": "P1", "libelle": "Logiciel RH"}]
+        self.rows = (
+            rows if rows is not None else [{"code": "P1", "libelle": "Logiciel RH"}]
+        )
 
     def raise_for_status(self):
         return None
@@ -33,9 +35,13 @@ class FakeSession:
         self.last = (url, kwargs)
         self.calls.append((url, kwargs))
         filtres = kwargs.get("json", {}).get("filtres", [])
-        siren_val = next((f["valeur"] for f in filtres if f.get("colonne") == "siren"), None)
+        siren_val = next(
+            (f["valeur"] for f in filtres if f.get("colonne") == "siren"), None
+        )
         if siren_val:
-            return FakeResponse([{"siren": siren_val, "denomination": f"Ville {siren_val}"}])
+            return FakeResponse(
+                [{"siren": siren_val, "denomination": f"Ville {siren_val}"}]
+            )
         return FakeResponse()
 
 
@@ -48,6 +54,7 @@ class HemicycleTests(unittest.TestCase):
     def tearDown(self):
         storage.engine.dispose()
         self.temp.cleanup()
+
     @patch.dict(os.environ, {"HEMICYCLE_API_KEY": "test-key"}, clear=False)
     def test_uses_official_post_endpoint(self):
         session = FakeSession()
@@ -111,4 +118,3 @@ class HemicycleTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
