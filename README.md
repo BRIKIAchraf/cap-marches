@@ -8,6 +8,8 @@ classe chaque signal avec un score hybride explicable et un dossier de preuves.
 
 - moteur de recherche sur `projets_achats_publics`, `marches_publics` et
   `sirene_etablissements` ;
+- interface responsive avec navigation unifiée, résultats persistants,
+  sélection d'une opportunité et parcours rechercher → comprendre → agir ;
 - similarité sémantique locale TF-IDF, ou embeddings multilingues facultatifs ;
 - score hybride sur 100 : sens 35, mots-clés 15, territoire 15, budget 15,
   calendrier ou renouvellement 20 ;
@@ -141,6 +143,9 @@ n'est envoyé automatiquement par ce dépôt.
 - Licence Ouverte 2.0 (Etalab).
 
 Les requêtes sont limitées à 100 lignes, mises en cache une heure dans
-l'interface et identifiées par `User-Agent`. La fin estimée d'un marché est un
+l'interface et identifiées par `User-Agent`. Sirene n'acceptant que les filtres
+unitaires sur SIREN/SIRET, l'enrichissement est plafonné par défaut à cinq
+acheteurs (`MAX_SIRENE_ENRICHMENTS`) et respecte une requête par seconde. La fin
+estimée d'un marché est un
 calcul `notification + durée` : ce n'est ni une date officielle de nouvel appel
 d'offres ni une prédiction certaine.

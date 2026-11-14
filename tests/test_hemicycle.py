@@ -22,9 +22,11 @@ class FakeResponse:
 class FakeSession:
     def __init__(self):
         self.last = None
+        self.calls = []
 
     def post(self, url, **kwargs):
         self.last = (url, kwargs)
+        self.calls.append((url, kwargs))
         return FakeResponse()
 
 
@@ -48,17 +50,19 @@ class HemicycleTests(unittest.TestCase):
         self.assertTrue(kwargs["headers"]["Authorization"].startswith("Bearer "))
 
     @patch.dict(os.environ, {"HEMICYCLE_API_KEY": "test-key"}, clear=False)
-    def test_batches_sirene_identifiers(self):
+    def test_queries_sirene_identifiers_with_supported_eq_filter(self):
         session = FakeSession()
         fetch_organizations(
             ["990000001", "990000002"],
             identifier_type="siren",
             session=session,
         )
-        filters = session.last[1]["json"]["filtres"]
+        self.assertEqual(len(session.calls), 2)
+        filters = session.calls[0][1]["json"]["filtres"]
         self.assertEqual(filters[0]["colonne"], "siren")
-        self.assertEqual(filters[0]["op"], "in")
+        self.assertEqual(filters[0]["op"], "eq")
         self.assertEqual(filters[1]["colonne"], "siege")
+        self.assertEqual(session.calls[0][1]["json"]["tri"], "siret")
 
     @patch.dict(os.environ, {"HEMICYCLE_API_KEY": "test-key"}, clear=False)
     def test_extracts_nested_rows(self):
