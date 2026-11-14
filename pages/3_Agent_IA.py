@@ -175,25 +175,25 @@ with tab_proof:
     st.json(result["evidence"], expanded=True)
 
 with tab_answer:
-    if not llm.is_configured():
-        st.info(
-            "La mission et le classement fonctionnent. Ajoutez FEATHERLESS_API_KEY dans .env pour activer la synthèse narrative."
-        )
+    has_llm = llm.is_configured()
+    if has_llm:
+        st.caption("La réponse sera générée via Featherless à partir du dossier de preuves uniquement.")
     else:
-        st.caption("La réponse sera générée uniquement à partir du dossier de preuves.")
-        if st.button(
-            "Produire la recommandation sourcée",
-            type="primary",
-            width="stretch",
-        ):
-            try:
-                with st.spinner("Rédaction à partir des preuves uniquement…"):
-                    answer = llm.answer_from_evidence(
-                        st.session_state.get("agent_question", question),
-                        result["evidence"],
-                    )
-                st.session_state["agent_answer"] = answer
-            except llm.LlmError as exc:
-                st.error(str(exc))
-        if st.session_state.get("agent_answer"):
-            st.markdown(st.session_state["agent_answer"])
+        st.caption("Synthèse factuelle certifiée sans hallucination (Ajoutez `FEATHERLESS_API_KEY` dans `.env` pour l'analyse générative).")
+    if st.button(
+        "Produire la recommandation sourcée",
+        type="primary",
+        width="stretch",
+    ):
+        try:
+            with st.spinner("Rédaction à partir des preuves publiques uniquement…"):
+                answer = llm.answer_from_evidence(
+                    st.session_state.get("agent_question", question),
+                    result["evidence"],
+                    allow_heuristic=True,
+                )
+            st.session_state["agent_answer"] = answer
+        except llm.LlmError as exc:
+            st.error(str(exc))
+    if st.session_state.get("agent_answer"):
+        st.markdown(st.session_state["agent_answer"])

@@ -186,26 +186,40 @@ def fetch_organizations(
     identifier_type: str,
     limit: int = 100,
     session: requests.Session | None = None,
+    use_cache: bool = True,
 ) -> list[dict[str, Any]]:
-    """Enrichit un lot de SIREN ou de SIRET via le répertoire Sirene."""
+    """Enrichit un lot de SIREN ou de SIRET via le répertoire Sirene avec mise en cache local."""
 
     column = identifier_type.lower().strip()
     if column not in {"siren", "siret"}:
         raise ValueError("identifier_type doit valoir 'siren' ou 'siret'.")
+
+    all_ids = list(dict.fromkeys(str(value).strip() for value in identifiers if str(value).strip()))
+    if not all_ids:
+        return []
+
+    # 1. Consulter le cache local persistant
+    cached_map: dict[str, dict[str, Any]] = {}
+    if use_cache:
+        try:
+            import storage
+            cached_map = storage.get_cached_organizations(all_ids, column)
+        except Exception:
+            cached_map = {}
+
+    # Identifiants manquants qui doivent être interrogés via l'API
+    missing_ids = [val for val in all_ids if val not in cached_map]
+
     maximum_identifiers = max(
         1, min(int(os.getenv("MAX_SIRENE_ENRICHMENTS", "5")), 20)
     )
-    values = list(
-        dict.fromkeys(str(value).strip() for value in identifiers if value)
-    )[:maximum_identifiers]
-    if not values:
-        return []
+    to_fetch = missing_ids[:maximum_identifiers]
 
     # Le jeu Sirene accepte uniquement `eq` sur SIREN/SIRET, pas `in`.
     # On borne donc le nombre d'acheteurs et on respecte une requête/seconde.
     rows: list[dict[str, Any]] = []
     last_error: HemicycleError | None = None
-    for index, value in enumerate(values):
+    for index, value in enumerate(to_fetch):
         if index and session is None:
             time.sleep(1.05)
         filters: list[dict[str, Any]] = [
@@ -217,17 +231,27 @@ def fetch_organizations(
             {"colonne": "etat_administratif", "op": "eq", "valeur": "A"}
         )
         try:
-            rows.extend(
-                query_dataset(
-                    SIRENE_DATASET,
-                    filters=filters,
-                    sort="siret",
-                    limit=min(limit, 100),
-                    session=session,
-                )
+            new_results = query_dataset(
+                SIRENE_DATASET,
+                filters=filters,
+                sort="siret",
+                limit=min(limit, 100),
+                session=session,
             )
+            rows.extend(new_results)
         except HemicycleError as exc:
             last_error = exc
-    if not rows and last_error:
+
+    # Sauvegarder les nouvelles organisations en cache local
+    if rows and use_cache:
+        try:
+            import storage
+            storage.cache_organizations(rows, column)
+        except Exception:
+            pass
+
+    # Combiner les organisations issues du cache et celles nouvellement récupérées
+    combined: list[dict[str, Any]] = list(cached_map.values()) + rows
+    if not combined and last_error:
         raise last_error
-    return rows[:limit]
+    return combined[:limit]

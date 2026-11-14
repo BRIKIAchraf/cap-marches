@@ -95,3 +95,10 @@ else:
             st.json(metadata)
         except ValueError as exc:
             st.error(str(exc))
+
+section("État du patrimoine de données local", "Mémoire persistante des marchés et des organisations.")
+stats = storage.seen_stats()
+col_s1, col_s2, col_s3 = st.columns(3)
+col_s1.metric("Marchés & projets indexés", stats["seen_total"])
+col_s2.metric("Acheteurs en cache Sirene", stats["sirene_cached"])
+col_s3.metric("Historique d'alertes", len(storage.list_alert_history()))

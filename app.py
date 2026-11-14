@@ -14,10 +14,10 @@ from dotenv import load_dotenv
 
 import storage
 from scoring import DISPLAY_COLUMNS, PROJECT_DISPLAY_COLUMNS, score_contracts, score_projects
-from services import decp, hemicycle, llm
+from services import alerts, decp, hemicycle, llm
 from services.evidence import contract_evidence, project_evidence
 from services.semantic import semantic_scores
-from ui import brand, empty_state, euro, hero, section, setup_page
+from ui import brand, empty_state, euro, hero, landing_storytelling, section, setup_page
 
 
 ROOT = Path(__file__).resolve().parent
@@ -192,6 +192,16 @@ def perform_analysis(config: dict[str, Any]) -> dict[str, Any]:
         frame = enrich_with_organizations(
             frame, [], identifier_type=identifier_type
         )
+    dataset = "projets_achats_publics" if config["analysis"] == "future" else "marches_publics"
+    if not frame.empty:
+        try:
+            records_list = frame.to_dict(orient="records")
+            is_new_flags = storage.mark_opportunities_seen(records_list, dataset)
+            frame["statut"] = ["✨ Nouveau" if n else "👁️ Déjà vu" for n in is_new_flags]
+        except Exception:
+            frame["statut"] = "✨ Nouveau"
+    else:
+        frame["statut"] = pd.Series(dtype=str)
     return {
         "frame": frame,
         "source_label": source_label,
@@ -302,16 +312,49 @@ if submitted:
 
 result = st.session_state.get("analysis_result")
 if not result:
-    empty_state(
-        "Commencez par une recherche ciblée",
-        "Décrivez votre offre dans le panneau de gauche. Cap Marchés confrontera les projets futurs, l'historique et les organisations publiques.",
-        "⌖",
-    )
-    section("Un parcours simple", "De la donnée brute à la prochaine action commerciale.")
-    first, second, third = st.columns(3)
-    first.info("**1 · Cibler**\n\nOffre, territoire et budget définissent votre périmètre.")
-    second.info("**2 · Comprendre**\n\nLe score hybride explique chaque priorité.")
-    third.info("**3 · Agir**\n\nQualifiez, sauvegardez et préparez votre approche.")
+    st.markdown("### 🎯 Explorez vos opportunités en 1 clic")
+    cta_col1, cta_col2 = st.columns([1.2, 0.8])
+    with cta_col1:
+        if st.button(
+            "🚀 Lancer la détection en direct (Omegup · SaaS RH)",
+            type="primary",
+            width="stretch",
+            help="Charge instantanément les données officielles avec le profil préconfiguré d'Omegup.",
+        ):
+            demo_config = {
+                "analysis": "future",
+                "keyword": "logiciel RH",
+                "department": "75",
+                "category": "",
+                "minimum": 30_000.0,
+                "maximum": 500_000.0,
+                "provider": "Auto",
+                "use_semantic": True,
+                "enrich": True,
+                "limit": 50,
+            }
+            with st.spinner("Détection en direct des projets d'achats publics pour Omegup…"):
+                st.session_state["analysis_result"] = perform_analysis(demo_config)
+                st.session_state["selected_opportunity"] = 0
+                st.rerun()
+    with cta_col2:
+        saved = storage.list_saved_searches()
+        if saved:
+            selected_saved = st.selectbox(
+                "Ou recharger une veille",
+                range(len(saved)),
+                format_func=lambda i: f"📂 {saved[i]['name']}",
+                label_visibility="collapsed",
+            )
+            if st.button("Charger cette veille", width="stretch"):
+                with st.spinner("Rechargement de la veille…"):
+                    st.session_state["analysis_result"] = perform_analysis(saved[selected_saved]["query"])
+                    st.session_state["selected_opportunity"] = 0
+                    st.rerun()
+        else:
+            st.info("💡 Utilisez le panneau à gauche pour une recherche personnalisée.")
+
+    landing_storytelling()
     st.stop()
 
 frame: pd.DataFrame = result["frame"]
@@ -331,8 +374,10 @@ st.caption(
     f"{result['source_label']} · {result['sirene_label']}"
 )
 
-metric1, metric2, metric3, metric4 = st.columns(4)
-metric1.metric("Opportunités analysées", len(frame))
+metric1, metric_new, metric2, metric3, metric4 = st.columns(5)
+metric1.metric("Opportunités", len(frame))
+new_count = int((frame["statut"] == "✨ Nouveau").sum()) if "statut" in frame else 0
+metric_new.metric("✨ Nouveaux signaux", new_count)
 if is_future:
     horizon = pd.Timestamp(date.today() + timedelta(days=90))
     upcoming = int(
@@ -340,12 +385,12 @@ if is_future:
             pd.Timestamp(date.today()), horizon
         ).sum()
     )
-    metric2.metric("Publications sous 90 jours", upcoming)
+    metric2.metric("Sous 90 jours", upcoming)
 else:
     median = frame["montant"].median() if frame["montant"].notna().any() else None
     metric2.metric("Montant médian", euro(median))
 metric3.metric(
-    "Acheteurs identifiés",
+    "Acheteurs",
     int(frame[result["identifier_column"]].nunique(dropna=True)),
 )
 metric4.metric("Meilleur score", f"{int(frame['score'].max())} / 100")
@@ -375,6 +420,7 @@ with tab_list:
         columns = [
             column
             for column in [
+                "statut",
                 "libelle",
                 "denomination_acheteur",
                 "montant_estime_du_marche",
@@ -390,6 +436,7 @@ with tab_list:
                 "date_previsionnelle_de_publication"
             ].dt.strftime("%d/%m/%Y")
         config = {
+            "statut": st.column_config.TextColumn("Signal", width="small"),
             "libelle": "Projet",
             "denomination_acheteur": "Acheteur",
             "montant_estime_du_marche": "Budget estimé",
@@ -403,6 +450,7 @@ with tab_list:
         columns = [
             column
             for column in [
+                "statut",
                 "objet",
                 "denomination_acheteur",
                 "montant",
@@ -418,6 +466,7 @@ with tab_list:
                 "%d/%m/%Y"
             )
         config = {
+            "statut": st.column_config.TextColumn("Signal", width="small"),
             "objet": "Marché",
             "denomination_acheteur": "Acheteur",
             "montant": st.column_config.NumberColumn("Montant", format="%.0f €"),
@@ -573,13 +622,29 @@ with tab_actions:
                 value=f"{active['keyword']} · {active['department'] or 'France'}",
             )
             alert = st.checkbox(
-                "Préparer l'alerte quotidienne",
-                help="La planification est enregistrée ; aucun email n'est envoyé par défaut.",
+                "Activer l'alerte quotidienne automatique",
+                value=True,
+                help="L'agent de fond surveillera les marchés et ne notifiera que les signaux inédits.",
             )
-            watch_submit = st.form_submit_button("Sauvegarder la veille")
+            watch_submit = st.form_submit_button("Sauvegarder la veille", type="primary")
         if watch_submit:
             storage.save_search(watch_name, active, alert)
-            st.success("Veille sauvegardée.")
+            st.success("Veille sauvegardée et planifiée avec succès.")
+
+        st.markdown("##### ⚡ Déclencheur d'alerte immédiat")
+        st.caption("Simule l'exécution de l'agent de fond sur cette recherche pour tester la notification.")
+        if st.button("Tester l'alerte automatique maintenant", width="stretch"):
+            with st.spinner("Exécution de la veille et calcul du différentiel…"):
+                alert_res = alerts.run_single_search({"name": f"Veille · {active['keyword']}", "query": active})
+                st.success(f"Alerte exécutée : {alert_res['new_count']} nouveau(x) signal(aux) détecté(s) !")
+                digest_md = alerts.format_digest_markdown(
+                    alert_res["search_name"],
+                    alert_res.get("new_records", []),
+                    active["analysis"],
+                )
+                with st.expander("Consulter la notification générée", expanded=True):
+                    st.markdown(digest_md)
+
     st.divider()
     download_col, ai_col = st.columns(2)
     with download_col:
@@ -591,23 +656,20 @@ with tab_actions:
             width="stretch",
         )
     with ai_col:
-        if not llm.is_configured():
-            st.button(
-                "Synthèse IA non connectée",
-                disabled=True,
-                width="stretch",
-                help="Ajoutez FEATHERLESS_API_KEY dans .env.",
-            )
-        elif st.button(
-            "Générer la note commerciale",
+        has_key = llm.is_configured()
+        btn_label = "Générer la note commerciale" if has_key else "Générer la note commerciale factuelle"
+        if st.button(
+            btn_label,
             type="primary",
             width="stretch",
+            help="Produit une note d'analyse commerciale complète à partir des preuves publiques.",
         ):
             try:
                 with st.spinner("Rédaction factuelle à partir des preuves…"):
                     brief = llm.build_brief(
                         frame.head(5).to_dict(orient="records"),
                         company_offer=active["keyword"],
+                        allow_heuristic=True,
                     )
                 st.markdown(brief)
             except llm.LlmError as exc:

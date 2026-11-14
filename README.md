@@ -17,6 +17,11 @@ classe chaque signal avec un score hybride explicable et un dossier de preuves.
 - agent outillé avec plan contrôlé, appels bornés et preuves visibles ;
 - synthèse Featherless facultative, limitée aux preuves sélectionnées ;
 - collecte des retours commerciaux, recherches sauvegardées et export CSV ;
+- cache local persistant pour les enrichissements Sirene (évite les surcoûts et respecte les quotas) ;
+- détection automatique des nouveaux signaux vs marchés déjà vus (diff temporel) ;
+- service d'alerte et de veille quotidienne automatisée (`scripts/daily_watch.py`, webhook Slack/Teams/Discord) ;
+- landing page immersive avec storytelling, comparatif méthode traditionnelle vs prédictive et démo 1-clic ;
+- synthèse commerciale résiliente (Featherless ou synthèse factuelle déterministe hors-ligne) ;
 - pipeline d'apprentissage supervisé activable après 100 vrais labels et deux
   classes ;
 - SQLite en local, PostgreSQL en production, Docker et CI GitHub Actions.
