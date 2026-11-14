@@ -151,6 +151,7 @@ def score_projects(
     minimum: float = 0,
     maximum: float = 1_000_000,
     today: date | None = None,
+    semantic_scores: Iterable[float] | None = None,
 ) -> pd.DataFrame:
     """Normalise et classe les projets d'achats futurs d'APProch."""
 
@@ -198,9 +199,25 @@ def score_projects(
     frame["score_calendrier"] = frame[
         "date_previsionnelle_de_publication"
     ].map(lambda value: publication_points(value, today))
-    frame["score"] = frame[
-        ["score_mots", "score_territoire", "score_montant", "score_calendrier"]
-    ].sum(axis=1)
+    if semantic_scores is None:
+        frame["score_semantique"] = 0
+        frame["score"] = frame[
+            ["score_mots", "score_territoire", "score_montant", "score_calendrier"]
+        ].sum(axis=1)
+    else:
+        values = list(semantic_scores)
+        if len(values) != len(frame):
+            raise ValueError("Le nombre de scores sémantiques doit correspondre aux lignes.")
+        frame["score_semantique"] = [round(max(0.0, min(1.0, value)) * 35) for value in values]
+        # Score hybride sur 100 : sens 35, mots 15, territoire 15,
+        # montant 15, calendrier 20. Les composantes brutes restent visibles.
+        frame["score"] = (
+            frame["score_semantique"]
+            + (frame["score_mots"] * 0.5).round()
+            + (frame["score_territoire"] * 0.75).round()
+            + (frame["score_montant"] * 0.75).round()
+            + (frame["score_calendrier"] * (2 / 3)).round()
+        ).clip(0, 100).astype(int)
     return frame.sort_values(
         ["score", "date_previsionnelle_de_publication"],
         ascending=[False, True],
@@ -216,6 +233,7 @@ def score_contracts(
     minimum: float = 0,
     maximum: float = 1_000_000,
     today: date | None = None,
+    semantic_scores: Iterable[float] | None = None,
 ) -> pd.DataFrame:
     """Normalise, enrichit et classe les contrats par score d'intérêt."""
 
@@ -267,14 +285,28 @@ def score_contracts(
     frame["score_renouvellement"] = frame["date_fin_estimee"].map(
         lambda value: renewal_points(value, today)
     )
-    frame["score"] = frame[
-        [
-            "score_mots",
-            "score_territoire",
-            "score_montant",
-            "score_renouvellement",
-        ]
-    ].sum(axis=1)
+    if semantic_scores is None:
+        frame["score_semantique"] = 0
+        frame["score"] = frame[
+            [
+                "score_mots",
+                "score_territoire",
+                "score_montant",
+                "score_renouvellement",
+            ]
+        ].sum(axis=1)
+    else:
+        values = list(semantic_scores)
+        if len(values) != len(frame):
+            raise ValueError("Le nombre de scores sémantiques doit correspondre aux lignes.")
+        frame["score_semantique"] = [round(max(0.0, min(1.0, value)) * 35) for value in values]
+        frame["score"] = (
+            frame["score_semantique"]
+            + (frame["score_mots"] * 0.5).round()
+            + (frame["score_territoire"] * 0.75).round()
+            + (frame["score_montant"] * 0.75).round()
+            + (frame["score_renouvellement"] * (2 / 3)).round()
+        ).clip(0, 100).astype(int)
     return frame.sort_values(
         ["score", "montant"], ascending=[False, False], na_position="last"
     ).reset_index(drop=True)

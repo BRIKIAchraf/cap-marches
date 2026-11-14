@@ -11,6 +11,8 @@ from typing import Any
 
 import requests
 
+from services.http import resilient_session
+
 
 BASE_URL = (
     "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/"
@@ -46,7 +48,7 @@ def fetch_contracts(
         "order_by": "datenotification desc",
         "limit": limit,
     }
-    client = session or requests
+    client = session or resilient_session()
     contact = os.getenv("APP_CONTACT", "").strip() or "contact-non-renseigne"
     try:
         response = client.get(

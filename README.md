@@ -1,19 +1,54 @@
 # Cap Marchés
 
-Cap Marchés transforme trois jeux publics en signaux de prospection
-explicables : projets d'achats à venir, marchés déjà notifiés et identité des
-acheteurs issue de Sirene.
+Cap Marchés est un agent de veille commerciale sur la commande publique. Il
+croise les projets d'achats à venir, l'historique des marchés et Sirene, puis
+classe chaque signal avec un score hybride explicable et un dossier de preuves.
 
-## Démarrage rapide
+## Ce qui est implémenté
 
-Sous Windows, la commande suivante crée l'environnement, installe les
-dépendances et lance l'application :
+- moteur de recherche sur `projets_achats_publics`, `marches_publics` et
+  `sirene_etablissements` ;
+- similarité sémantique locale TF-IDF, ou embeddings multilingues facultatifs ;
+- score hybride sur 100 : sens 35, mots-clés 15, territoire 15, budget 15,
+  calendrier ou renouvellement 20 ;
+- profil d'entreprise persistant servant de mémoire à l'agent ;
+- agent outillé avec plan contrôlé, appels bornés et preuves visibles ;
+- synthèse Featherless facultative, limitée aux preuves sélectionnées ;
+- collecte des retours commerciaux, recherches sauvegardées et export CSV ;
+- pipeline d'apprentissage supervisé activable après 100 vrais labels et deux
+  classes ;
+- SQLite en local, PostgreSQL en production, Docker et CI GitHub Actions.
+
+## Architecture
+
+```text
+Streamlit
+├── Radar principal       recherche, scoring, export, feedback
+├── Profil entreprise     mémoire durable
+├── Agent IA              plan → outils → classement → preuves → LLM
+└── Apprentissage         contrôle des labels et modèle candidat
+        │
+        ├── Hémicycle     projets futurs, marchés, Sirene
+        ├── DECP          repli historique sans clé
+        ├── Semantic      TF-IDF / sentence-transformers
+        ├── Scoring       règles métier explicables
+        ├── Evidence      faits autorisés et sources
+        └── Storage       SQLite / PostgreSQL
+```
+
+Le LLM ne recherche pas directement dans Internet et ne modifie pas le score.
+Il reçoit au maximum dix dossiers de preuves structurés. Une absence de donnée
+doit rester une absence, jamais une invention.
+
+## Démarrage local
+
+Sous Windows :
 
 ```powershell
 .\start.ps1
 ```
 
-Ou, manuellement :
+Installation manuelle :
 
 ```powershell
 python -m venv .venv
@@ -23,95 +58,89 @@ Copy-Item .env.example .env
 streamlit run app.py
 ```
 
-La vue historique fonctionne avec l'API DECP sans clé. La vue prospective
-requiert Hémicycle ; sans clé, elle utilise des lignes synthétiques clairement
-signalées.
-Avant un usage public, renseignez votre adresse dans `APP_CONTACT` du fichier
-`.env` afin que les appels de données soient correctement identifiés.
+Sans clé, la démonstration utilise des données synthétiques clairement
+signalées. L'historique DECP reste accessible sans authentification.
 
-## Connecter Hémicycle
+## Configuration
 
-1. Créez une clé sur <https://hemicycle.ai/compte-api>.
-2. Copiez `.env.example` vers `.env`, puis renseignez :
+Créez une clé sur <https://hemicycle.ai/compte-api>, copiez `.env.example` vers
+`.env`, puis renseignez au minimum :
 
 ```text
-HEMICYCLE_API_KEY=votre_cle
-HEMICYCLE_API_URL=https://api.hemicycle.ai/v1/jeux/interroger
-HEMICYCLE_API_VERSION=2026-10-01
+HEMICYCLE_API_KEY=...
+APP_CONTACT=contact@votre-domaine.fr
 ```
 
-L'application emploie deux pages Hémicycle pour une analyse enrichie : une page
-du jeu principal et une page Sirene. Chaque page coûte actuellement 1 crédit.
-
-### Jeux exploités
-
-- `projets_achats_publics` : projets annoncés sur APProch avant l'appel
-  d'offres, dates, budgets estimés et liens de consultation ;
-- `marches_publics` : historique DECP, montants, durées, acheteurs et
-  titulaires ;
-- `sirene_etablissements` : dénomination, activité et commune de chaque
-  acheteur.
-
-## Connecter Featherless
-
-Renseignez dans `.env` :
+La synthèse narrative est facultative :
 
 ```text
-FEATHERLESS_API_KEY=votre_cle
+FEATHERLESS_API_KEY=...
 FEATHERLESS_MODEL=zai-org/GLM-5.2
 ```
 
-L'IA explique uniquement les cinq meilleurs signaux. Elle ne calcule pas le
-classement et reçoit un sous-ensemble limité des champs publics.
+Ne placez jamais `.env`, une clé ou un secret dans GitHub.
 
-## Score
+### Embeddings multilingues facultatifs
 
-Le score sur 100 est entièrement déterministe. Pour les projets à venir :
-
-- correspondance des mots-clés : 30 points ;
-- territoire : 20 points ;
-- tranche de montant : 20 points ;
-- proximité de la publication : 30 points.
-
-Pour les marchés notifiés :
-
-- correspondance des mots-clés : 30 points ;
-- territoire : 20 points ;
-- montant ciblé : 20 points ;
-- fin de contrat estimée : 30 points.
-
-La date de fin est une estimation : `date de notification + durée en mois`.
-Elle ne constitue ni une date d'appel d'offres ni une prédiction certaine.
-
-## Tests
+Le fournisseur `tfidf` est rapide, local et sans téléchargement. Pour une
+recherche plus sémantique :
 
 ```powershell
-python -m unittest discover -s tests -v
+python -m pip install -r requirements-ai.txt
+$env:SEMANTIC_PROVIDER="sentence-transformers"
 ```
 
-## Sources et réutilisation
+Le modèle par défaut est
+`sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`. Son premier
+chargement télécharge les poids ; prévoyez le cache dans l'infrastructure.
 
-- Hémicycle, projets d'achats publics :
-  <https://hemicycle.ai/bibliotheque/projets_achats_publics>
-- Hémicycle, marchés publics notifiés :
-  <https://hemicycle.ai/bibliotheque/marches_publics>
-- Hémicycle, répertoire Sirene :
-  <https://hemicycle.ai/bibliotheque/sirene_etablissements>
-- Données essentielles de la commande publique :
-  <https://data.economie.gouv.fr/explore/assets/decp-2022-marches-valides/>
-- API Explore :
-  <https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/decp-2022-marches-valides/records>
-- Licence : Licence Ouverte 2.0 (Etalab).
+## Boucle d'apprentissage
 
-Le client limite chaque recherche à 100 lignes, met les résultats en cache
-pendant une heure et s'identifie par un `User-Agent`. Remplacez le contact du
-`User-Agent` via `APP_CONTACT` avant une utilisation publique.
+Les boutons de qualification enregistrent `pertinent`, `non_pertinent`,
+`a_contacter`, `contacte`, `gagne` ou `perdu`. Le modèle supervisé n'est
+entraînable qu'après 100 observations réelles et la présence de résultats
+positifs et négatifs. L'entraînement produit un modèle candidat et une métrique
+ROC-AUC ; il n'est jamais activé automatiquement. Cette règle évite de fabriquer
+une précision artificielle à partir des échantillons de démonstration.
 
-## Démo de trois minutes
+## Tests et qualité
 
-1. Ouvrir la vue `Opportunités à venir` et saisir `logiciel RH`.
-2. Montrer la date de publication, le budget et le lien de consultation.
-3. Montrer le nom de l'acheteur enrichi par Sirene.
-4. Passer à l'historique pour expliquer les budgets et renouvellements.
-5. Générer la note Featherless et terminer par les sources et limites.
+```powershell
+python -m compileall -q app.py scoring.py storage.py learning.py services pages tests
+python -m unittest discover -s tests -v
+git diff --check
+```
 
+Les tests couvrent le scoring, le sémantique, l'agent sans réseau, la
+persistance, les connecteurs et un parcours Streamlit hors ligne.
+
+## Docker et production
+
+```powershell
+docker build -t cap-marches .
+docker run --rm -p 8501:8501 --env-file .env cap-marches
+```
+
+Pour plusieurs instances, utilisez PostgreSQL :
+
+```text
+DATABASE_URL=postgresql+psycopg://user:password@host:5432/cap_marches
+```
+
+En production, ajoutez un reverse proxy HTTPS, un coffre de secrets, une
+authentification utilisateur, des sauvegardes, une rétention des logs et un
+monitoring. Les recherches sauvegardées préparent les alertes, mais aucun email
+n'est envoyé automatiquement par ce dépôt.
+
+## Sources et limites
+
+- [Hémicycle · projets d'achats publics](https://hemicycle.ai/bibliotheque/projets_achats_publics)
+- [Hémicycle · marchés publics](https://hemicycle.ai/bibliotheque/marches_publics)
+- [Hémicycle · Sirene](https://hemicycle.ai/bibliotheque/sirene_etablissements)
+- [DECP officielles](https://data.economie.gouv.fr/explore/assets/decp-2022-marches-valides/)
+- Licence Ouverte 2.0 (Etalab).
+
+Les requêtes sont limitées à 100 lignes, mises en cache une heure dans
+l'interface et identifiées par `User-Agent`. La fin estimée d'un marché est un
+calcul `notification + durée` : ce n'est ni une date officielle de nouvel appel
+d'offres ni une prédiction certaine.

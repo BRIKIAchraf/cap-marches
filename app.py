@@ -13,6 +13,9 @@ from dotenv import load_dotenv
 
 from scoring import DISPLAY_COLUMNS, PROJECT_DISPLAY_COLUMNS, score_contracts, score_projects
 from services import decp, hemicycle, llm
+from services.evidence import contract_evidence, project_evidence
+from services.semantic import semantic_scores
+import storage
 
 
 ROOT = Path(__file__).resolve().parent
@@ -190,19 +193,24 @@ with st.sidebar:
         value=True,
         help="Un appel Hémicycle supplémentaire, soit 1 crédit par page.",
     )
+    use_semantic = st.checkbox(
+        "Classement sémantique hybride",
+        value=True,
+        help="Combine le sens de votre offre avec les critères métier explicables.",
+    )
     limit = st.slider("Lignes analysées", 20, 100, 100, 10)
     run = st.button("Analyser les opportunités", type="primary", width="stretch")
 
     st.divider()
     if analysis == "future":
         st.caption(
-            "Score sans IA : mots-clés (30), territoire (20), montant (20) "
-            "et calendrier de publication (30)."
+            "Score hybride : sens (35), mots (15), territoire (15), montant (15) "
+            "et calendrier (20)."
         )
     else:
         st.caption(
-            "Score sans IA : mots-clés (30), territoire (20), montant (20) "
-            "et renouvellement estimé (30)."
+            "Score hybride : sens (35), mots (15), territoire (15), montant (15) "
+            "et renouvellement estimé (20)."
         )
 
 with st.expander("Les trois jeux de données utilisés"):
@@ -229,21 +237,40 @@ except (ValueError, decp.DecpError, hemicycle.HemicycleError) as exc:
     st.stop()
 
 if analysis == "future":
+    semantic_values = None
+    if use_semantic:
+        documents = [
+            " ".join(
+                str(row.get(key, "") or "")
+                for key in ("libelle", "description", "code_s_cpv", "categorie_d_achat")
+            )
+            for row in records
+        ]
+        semantic_values = semantic_scores(keyword, documents)
     frame = score_projects(
         records,
         keyword=keyword,
         location=department,
         minimum=minimum,
         maximum=maximum,
+        semantic_scores=semantic_values,
     )
     identifier_column, identifier_type = "siren_de_l_entite_acheteuse", "siren"
 else:
+    semantic_values = None
+    if use_semantic:
+        documents = [
+            " ".join(str(row.get(key, "") or "") for key in ("objet", "codecpv", "nature"))
+            for row in records
+        ]
+        semantic_values = semantic_scores(keyword, documents)
     frame = score_contracts(
         records,
         keyword=keyword,
         location=department,
         minimum=minimum,
         maximum=maximum,
+        semantic_scores=semantic_values,
     )
     identifier_column, identifier_type = "acheteur_id", "siret"
 
@@ -348,12 +375,14 @@ if analysis == "future":
 
     with st.expander("Pourquoi le premier projet est prioritaire ?", expanded=True):
         top = frame.iloc[0]
-        cols = st.columns(4)
-        cols[0].metric("Mots-clés", f"{int(top['score_mots'])}/30")
-        cols[1].metric("Territoire", f"{int(top['score_territoire'])}/20")
-        cols[2].metric("Montant", f"{int(top['score_montant'])}/20")
-        cols[3].metric("Calendrier", f"{int(top['score_calendrier'])}/30")
+        cols = st.columns(5)
+        cols[0].metric("Sens", f"{int(top['score_semantique'])}/35")
+        cols[1].metric("Mots-clés", f"{int(top['score_mots'])}/30 brut")
+        cols[2].metric("Territoire", f"{int(top['score_territoire'])}/20 brut")
+        cols[3].metric("Montant", f"{int(top['score_montant'])}/20 brut")
+        cols[4].metric("Calendrier", f"{int(top['score_calendrier'])}/30 brut")
         st.write(top["libelle"])
+        st.json(project_evidence(top.to_dict()), expanded=False)
 else:
     metric1, metric2, metric3, metric4 = st.columns(4)
     metric1.metric("Marchés", len(frame))
@@ -424,12 +453,61 @@ else:
 
     with st.expander("Pourquoi le premier marché est prioritaire ?", expanded=True):
         top = frame.iloc[0]
-        cols = st.columns(4)
-        cols[0].metric("Mots-clés", f"{int(top['score_mots'])}/30")
-        cols[1].metric("Territoire", f"{int(top['score_territoire'])}/20")
-        cols[2].metric("Montant", f"{int(top['score_montant'])}/20")
-        cols[3].metric("Renouvellement", f"{int(top['score_renouvellement'])}/30")
+        cols = st.columns(5)
+        cols[0].metric("Sens", f"{int(top['score_semantique'])}/35")
+        cols[1].metric("Mots-clés", f"{int(top['score_mots'])}/30 brut")
+        cols[2].metric("Territoire", f"{int(top['score_territoire'])}/20 brut")
+        cols[3].metric("Montant", f"{int(top['score_montant'])}/20 brut")
+        cols[4].metric("Renouvellement", f"{int(top['score_renouvellement'])}/30 brut")
         st.write(top["objet"])
+        st.json(contract_evidence(top.to_dict()), expanded=False)
+
+st.subheader("Capitaliser et exporter")
+action_col, save_col, export_col = st.columns(3)
+top_record = frame.iloc[0].to_dict()
+opportunity_key = str(
+    top_record.get("code")
+    or f"{top_record.get('acheteur_id', '')}:{top_record.get('objet', '')}"
+)
+with action_col:
+    label = st.selectbox(
+        "Retour sur la première opportunité",
+        ["pertinent", "non_pertinent", "a_contacter", "contacte", "gagne", "perdu"],
+    )
+    if st.button("Enregistrer le retour"):
+        storage.record_feedback(
+            opportunity_key,
+            label,
+            "projets_achats_publics" if analysis == "future" else "marches_publics",
+            top_record,
+        )
+        st.toast("Retour enregistré pour le futur modèle de ranking.")
+with save_col:
+    search_name = st.text_input("Nom de la veille", value=f"Veille {keyword}")
+    alerts_enabled = st.checkbox("Préparer une alerte quotidienne", value=False)
+    if st.button("Sauvegarder la veille"):
+        storage.save_search(
+            search_name,
+            {
+                "analysis": analysis,
+                "keyword": keyword,
+                "department": department,
+                "category": category,
+                "minimum": minimum,
+                "maximum": maximum,
+            },
+            alerts_enabled,
+        )
+        st.toast("Veille sauvegardée. L'envoi automatique reste désactivé.")
+with export_col:
+    csv = frame.to_csv(index=False).encode("utf-8-sig")
+    st.download_button(
+        "Télécharger les résultats CSV",
+        data=csv,
+        file_name="cap-marches-opportunites.csv",
+        mime="text/csv",
+        width="stretch",
+    )
 
 st.subheader("Préparer l'approche commerciale")
 if not llm.is_configured():

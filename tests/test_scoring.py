@@ -98,6 +98,21 @@ class ScoringTests(unittest.TestCase):
         self.assertEqual(result.iloc[0]["acheteur_id"], "A")
         self.assertGreater(result.iloc[0]["score"], result.iloc[1]["score"])
 
+    def test_hybrid_scoring_uses_semantic_signal(self):
+        records = [
+            {"objet": "Objet générique", "montant": 100_000},
+            {"objet": "Objet générique", "montant": 100_000},
+        ]
+        result = score_contracts(
+            records,
+            keyword="logiciel RH",
+            minimum=0,
+            maximum=200_000,
+            semantic_scores=[0.1, 0.9],
+        )
+        self.assertEqual(result.iloc[0]["score_semantique"], 32)
+        self.assertLessEqual(result.iloc[0]["score"], 100)
+
 
 if __name__ == "__main__":
     unittest.main()

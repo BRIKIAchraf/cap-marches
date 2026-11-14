@@ -90,3 +90,47 @@ def build_brief(records: list[dict[str, Any]], company_offer: str) -> str:
         raise LlmError("Featherless a renvoyé une réponse vide.")
     return content
 
+
+def answer_from_evidence(question: str, evidence: list[dict[str, Any]]) -> str:
+    """Répond à une question en restant strictement lié aux preuves structurées."""
+
+    api_key = os.getenv("FEATHERLESS_API_KEY", "").strip()
+    if not api_key:
+        raise LlmError("Ajoutez FEATHERLESS_API_KEY dans .env.")
+    try:
+        from openai import OpenAI
+    except ImportError as exc:  # pragma: no cover
+        raise LlmError("Le paquet `openai` n'est pas installé.") from exc
+    safe_evidence = json.loads(json.dumps(evidence[:10], ensure_ascii=False, default=str))
+    client = OpenAI(api_key=api_key, base_url="https://api.featherless.ai/v1")
+    try:
+        response = client.chat.completions.create(
+            model=os.getenv("FEATHERLESS_MODEL", "zai-org/GLM-5.2"),
+            temperature=0.1,
+            max_tokens=700,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Tu es l'agent Cap Marchés. Réponds uniquement à partir des "
+                        "preuves JSON. Cite l'identifiant et le jeu source pour chaque "
+                        "affirmation importante. Si une information manque, dis-le. "
+                        "Structure : Réponse, Opportunités prioritaires, Actions, Limites."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {"question": question, "preuves": safe_evidence},
+                        ensure_ascii=False,
+                    ),
+                },
+            ],
+        )
+    except Exception as exc:
+        raise LlmError(f"Featherless n'a pas répondu : {exc}") from exc
+    content = response.choices[0].message.content
+    if not content:
+        raise LlmError("Featherless a renvoyé une réponse vide.")
+    return content
+

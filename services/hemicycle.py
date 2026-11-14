@@ -14,6 +14,8 @@ from typing import Any
 
 import requests
 
+from services.http import resilient_session
+
 
 API_URL = "https://api.hemicycle.ai/v1/jeux/interroger"
 API_VERSION = "2026-10-01"
@@ -85,7 +87,7 @@ def query_dataset(
     url = os.getenv("HEMICYCLE_API_URL", API_URL).strip() or API_URL
     version = os.getenv("HEMICYCLE_API_VERSION", API_VERSION).strip() or API_VERSION
     contact = os.getenv("APP_CONTACT", "").strip() or "contact-non-renseigne"
-    client = session or requests
+    client = session or resilient_session()
     try:
         response = client.post(
             url,

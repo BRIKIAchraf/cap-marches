@@ -4,4 +4,7 @@ __pycache__/
 .pytest_cache/
 *.py[cod]
 .streamlit/secrets.toml
+data/*.db
+data/*.sqlite*
+logs/
 
